@@ -1,0 +1,6 @@
+data_root: "Distan_error（原20）"
+output_dir: "results/threshold_selection"
+thresholds_px: {start: 50, stop: 1000, step: 25}
+labels: {alert: 1, sleepy: 0}
+task_difficulties: [easy, hard]
+random_seed: 20260712

@@ -1,0 +1,26 @@
+.DS_Store
+.pytest_cache/
+__pycache__/
+.venv/
+
+# Raw/local datasets are intentionally not versioned.
+/data/
+/Distan_error（原20）/
+
+# Large generated or model artifacts.
+*.mp4
+*.npy
+*.pt
+*.ckpt
+
+# Keep lightweight experiment summaries trackable while ignoring bulky outputs.
+results/**
+!results/
+!results/**/
+!results/**/.gitkeep
+!results/**/*.csv
+!results/**/*.json
+!results/**/*.md
+!results/**/*.txt
+!results/**/*.yaml
+!results/**/*.yml
