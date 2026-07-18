@@ -318,10 +318,30 @@ Expected: PASS。
 
 ```python
 from pathlib import Path
+import yaml
 from experiments.threshold_selection.run import run_experiment
 
-def test_run_experiment_writes_required_outputs(sample_config: Path, tmp_path: Path) -> None:
-    run_experiment(sample_config, tmp_path)
+def _write_sequence(root: Path, difficulty: str, subject: str, label: str, values: str) -> None:
+    target = root / difficulty / subject / label
+    target.mkdir(parents=True)
+    (target / "all_errors.txt").write_text(values, encoding="utf-8")
+
+def test_run_experiment_writes_required_outputs(tmp_path: Path) -> None:
+    data_root = tmp_path / "errors"
+    for difficulty in ["easy", "hard"]:
+        for subject in ["01", "02", "03"]:
+            _write_sequence(data_root, difficulty, subject, "alert", "10\n20\n30\n")
+            _write_sequence(data_root, difficulty, subject, "sleepy", "200\n220\n240\n")
+    config = tmp_path / "config.yaml"
+    config.write_text(yaml.safe_dump({
+        "data_root": str(data_root),
+        "output_dir": str(tmp_path / "out"),
+        "thresholds_px": {"start": 50, "stop": 100, "step": 50},
+        "labels": {"alert": 1, "sleepy": 0},
+        "task_difficulties": ["easy", "hard"],
+        "random_seed": 20260712,
+    }), encoding="utf-8")
+    run_experiment(config, tmp_path / "out")
     expected = {
         "config_used.yaml", "task_features.csv", "candidate_summary.csv",
         "nested_loso_folds.csv", "recommended_threshold.json",
@@ -384,8 +404,8 @@ Expected: 所有测试通过。
 
 检查 README 的运行命令、实验记录中的推荐阈值、JSON 结果和图表是否一致；检查图中不存在截断坐标、空白画布或路径相关文本。
 
-- [ ] **Step 3: 初始化版本控制并提交（若用户授权）**
+- [ ] **Step 3: 提交可交接仓库产物**
 
-Run: `git init && git add . && git commit -m "feat: add attention threshold study"`
+Run: `git add README.md docs/experiments/threshold-selection.md results/threshold_selection configs experiments src tests && git commit -m "feat: add attention threshold study"`
 
 Expected: 仅源码、配置、文档、测试和小型结果进入首次提交；原始数据未被暂存。
