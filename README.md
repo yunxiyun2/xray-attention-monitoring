@@ -32,17 +32,29 @@ environment ready
 
 The only parameter source for the threshold-selection experiment is `configs/threshold_selection.yaml`.
 
-The planned command for the threshold experiment is:
+### Running the Experiment
 
 ```bash
-python -m xray_attention.attention.threshold_selection --config configs/threshold_selection.yaml
+cd /Users/dyx/pythonproject/xray-attention-monitoring
+PYTHONPATH=src conda run -n xray-attention python experiments/threshold_selection/run.py --config configs/threshold_selection.yaml
 ```
 
-Task 1 establishes the repository skeleton only; the executable experiment module will be added in a later task.
+### Outputs
 
-## Outputs
+Threshold-selection outputs are written under `results/threshold_selection/`:
 
-Threshold-selection outputs should be written under `results/threshold_selection/`. The directory is tracked with `.gitkeep`; bulky intermediate arrays, videos, checkpoints, and raw artifacts are ignored. Lightweight summary files such as `.csv`, `.json`, `.md`, `.txt`, `.yaml`, and `.yml` remain trackable for thesis reporting and review.
+- `config_used.yaml`: The exact configuration used for the experiment
+- `task_features.csv`: 80 tasks, each with summary statistics and threshold features
+- `candidate_summary.csv`: Aggregate performance across all candidate thresholds
+- `nested_loso_folds.csv`: Per-fold results from the nested leave-one-subject-out evaluation
+- `recommended_threshold.json`: Recommended attention thresholds:
+  - `overall`: 900px
+  - `easy`: 975px
+  - `hard`: 625px
+- `threshold_performance.png`: ROC-AUC curves across thresholds (optional)
+- `selected_thresholds.png`: Distribution of selected thresholds across folds (optional)
+
+The directory is tracked with `.gitkeep`; bulky intermediate arrays, videos, checkpoints, and raw artifacts are ignored. Lightweight summary files such as `.csv`, `.json`, `.md`, `.txt`, `.yaml`, and `.yml` remain trackable for thesis reporting and review.
 
 ## Labels
 

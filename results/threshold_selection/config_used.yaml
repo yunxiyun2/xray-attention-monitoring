@@ -1,0 +1,13 @@
+data_root: "Distan_error\uFF08\u539F20\uFF09"
+labels:
+  alert: 1
+  sleepy: 0
+output_dir: results/threshold_selection
+random_seed: 20260712
+task_difficulties:
+- easy
+- hard
+thresholds_px:
+  start: 50
+  step: 25
+  stop: 1000
