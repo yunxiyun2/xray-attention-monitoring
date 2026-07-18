@@ -2,6 +2,8 @@
 .pytest_cache/
 __pycache__/
 .venv/
+.conda/
+.superpowers/sdd/
 
 # Raw/local datasets are intentionally not versioned.
 /data/
@@ -12,6 +14,10 @@ __pycache__/
 *.npy
 *.pt
 *.ckpt
+*.pth
+*.safetensors
+*.onnx
+*.bin
 
 # Keep lightweight experiment summaries trackable while ignoring bulky outputs.
 results/**
