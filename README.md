@@ -35,7 +35,7 @@ The only parameter source for the threshold-selection experiment is `configs/thr
 ### Running the Experiment
 
 ```bash
-cd /Users/dyx/pythonproject/xray-attention-monitoring
+# Run from the project root (the directory containing this README):
 PYTHONPATH=src conda run -n xray-attention python experiments/threshold_selection/run.py --config configs/threshold_selection.yaml
 ```
 

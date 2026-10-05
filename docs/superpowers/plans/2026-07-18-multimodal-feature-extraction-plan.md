@@ -22,7 +22,7 @@
 - [ ] **Step 1: 创建 dataset 目录并添加 gitkeep**
 
 ```bash
-cd /Users/dyx/pythonproject/xray-attention-monitoring
+# 从项目根目录运行（即包含 README.md 的目录）
 mkdir -p dataset
 touch dataset/.gitkeep
 ```
@@ -31,7 +31,7 @@ touch dataset/.gitkeep
 
 检查一下现有文件:
 ```bash
-ls -la /Users/dyx/pythonproject/xray-attention-monitoring/src/xray_attention/data/
+ls -la src/xray_attention/data/
 ```
 
 - [ ] **Step 3: 提交**
@@ -56,8 +56,12 @@ import numpy as np
 from pathlib import Path
 from xray_attention.data.gaze_feature_extractor import GazeFeatureExtractor
 
+# 项目根目录：tests/ 的上一级，兼容 Linux 与 macOS
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
 def test_load_all_errors():
-    test_file = "/Users/dyx/pythonproject/xray-attention-monitoring/Distan_error（原20）/easy/01/alert/all_errors.txt"
+    # 路径相对项目根解析，不依赖任何绝对路径
+    test_file = PROJECT_ROOT / "Distan_error（原20）" / "easy" / "01" / "alert" / "all_errors.txt"
     extractor = GazeFeatureExtractor()
     errors = extractor.load_all_errors(test_file)
     assert isinstance(errors, np.ndarray)
@@ -74,7 +78,7 @@ def test_extract_window_features():
 - [ ] **Step 2: 运行测试，验证失败**
 
 ```bash
-cd /Users/dyx/pythonproject/xray-attention-monitoring
+# 从项目根目录运行
 PYTHONPATH=src conda run -n xray-attention python -m pytest tests/test_gaze_features.py -v
 ```
 Expected: FAIL because GazeFeatureExtractor not defined
@@ -238,16 +242,27 @@ Expected: FAIL
 ```python
 from pathlib import Path
 
+# 项目根目录：src/xray_attention/data/dataset_builder.py 的上三级
+# 兼容 Linux 与 macOS，不依赖任何写死的绝对路径
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
 class DatasetBuilder:
     def __init__(
-        self, 
-        data_root="/Users/dyx/pythonproject/xray-attention-monitoring/data",
-        dist_error_root="/Users/dyx/pythonproject/xray-attention-monitoring/Distan_error（原20）",
-        output_root="/Users/dyx/pythonproject/xray-attention-monitoring/dataset"
+        self,
+        data_root=None,
+        dist_error_root=None,
+        output_root=None,
     ):
-        self.data_root = Path(data_root)
-        self.dist_error_root = Path(dist_error_root)
-        self.output_root = Path(output_root)
+        # 默认路径相对项目根解析；也允许调用方传入自定义绝对/相对路径
+        self.data_root = Path(data_root) if data_root else _PROJECT_ROOT / "data"
+        self.dist_error_root = (
+            Path(dist_error_root)
+            if dist_error_root
+            else _PROJECT_ROOT / "Distan_error（原20）"
+        )
+        self.output_root = (
+            Path(output_root) if output_root else _PROJECT_ROOT / "dataset"
+        )
     
     def get_dataset_structure(self):
         structure = {}
