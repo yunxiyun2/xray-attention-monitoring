@@ -4,6 +4,8 @@ __pycache__/
 .venv/
 .conda/
 .superpowers/sdd/
+.trae/
+.worktrees/
 
 # Raw/local datasets are intentionally not versioned.
 /data/
@@ -30,3 +32,6 @@ results/**
 !results/**/*.txt
 !results/**/*.yaml
 !results/**/*.yml
+
+# Biweekly report
+docs/biweekly_report/
