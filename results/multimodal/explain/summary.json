@@ -1,0 +1,40 @@
+{
+  "n_samples": 699,
+  "n_train": 563,
+  "n_test": 136,
+  "test_subjects": [
+    "01",
+    "02",
+    "16",
+    "18"
+  ],
+  "test_per_subject_auc": {
+    "01": 1.0,
+    "02": 0.94921875,
+    "16": 1.0,
+    "18": 0.8271604938271605
+  },
+  "base_auc_test": 0.9474480968858132,
+  "top5_permutation_features": [
+    {
+      "feature": "std_error",
+      "auc_drop": 0.02848183391003467
+    },
+    {
+      "feature": "face_ear_mean",
+      "auc_drop": 0.027551903114186982
+    },
+    {
+      "feature": "p95_error",
+      "auc_drop": 0.009104671280276921
+    },
+    {
+      "feature": "face_ear_std",
+      "auc_drop": 0.00668252595155705
+    },
+    {
+      "feature": "mean_error",
+      "auc_drop": 0.006444636678200721
+    }
+  ]
+}

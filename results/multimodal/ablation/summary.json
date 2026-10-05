@@ -1,0 +1,114 @@
+{
+  "n_samples": 699,
+  "n_subjects": 20,
+  "feature_groups": {
+    "gaze": [
+      "mean_error",
+      "median_error",
+      "std_error",
+      "p95_error",
+      "inside_ratio_900",
+      "longest_run_900",
+      "inside_ratio_975",
+      "longest_run_975",
+      "inside_ratio_625",
+      "longest_run_625"
+    ],
+    "eye": [
+      "face_perclos_80",
+      "face_long_closure_count",
+      "face_blink_count",
+      "face_blink_rate",
+      "face_blink_duration_mean",
+      "face_blink_amplitude_mean",
+      "face_ear_mean",
+      "face_ear_std",
+      "face_ear_min"
+    ],
+    "mouth": [
+      "face_mar_mean",
+      "face_mar_max",
+      "face_yawn_count"
+    ]
+  },
+  "baseline_condition": "all",
+  "baseline_auc": 0.9293214131717503,
+  "conditions": {
+    "all": {
+      "condition": "all",
+      "n_features": 22,
+      "gaze_dim": 10,
+      "auc_mean": 0.9293214131717503,
+      "auc_ci_lo": 0.816126972727955,
+      "auc_ci_hi": 0.8706529522495905,
+      "brier_score": 0.16875100791882675
+    },
+    "drop_gaze": {
+      "condition": "drop_gaze",
+      "n_features": 12,
+      "gaze_dim": 0,
+      "auc_mean": 0.8573491115196077,
+      "auc_ci_lo": 0.7695674646805393,
+      "auc_ci_hi": 0.8369970162148656,
+      "brier_score": 0.1845441852639604
+    },
+    "drop_eye": {
+      "condition": "drop_eye",
+      "n_features": 13,
+      "gaze_dim": 10,
+      "auc_mean": 0.8779804659132171,
+      "auc_ci_lo": 0.7926284891448826,
+      "auc_ci_hi": 0.8580335606973669,
+      "brier_score": 0.1668175399357993
+    },
+    "drop_mouth": {
+      "condition": "drop_mouth",
+      "n_features": 19,
+      "gaze_dim": 10,
+      "auc_mean": 0.9345971200980394,
+      "auc_ci_lo": 0.8538705653626285,
+      "auc_ci_hi": 0.901183370179317,
+      "brier_score": 0.14941142576666508
+    },
+    "gaze_only": {
+      "condition": "gaze_only",
+      "n_features": 10,
+      "gaze_dim": 10,
+      "auc_mean": 0.8879679273329701,
+      "auc_ci_lo": 0.8108839971647771,
+      "auc_ci_hi": 0.8703260994279532,
+      "brier_score": 0.15996124291405503
+    },
+    "face_only": {
+      "condition": "face_only",
+      "n_features": 12,
+      "gaze_dim": 0,
+      "auc_mean": 0.8573491115196077,
+      "auc_ci_lo": 0.7695674646805393,
+      "auc_ci_hi": 0.8369970162148656,
+      "brier_score": 0.1845441852639604
+    }
+  },
+  "delta_vs_baseline": {
+    "drop_gaze": {
+      "auc": 0.8573491115196077,
+      "delta_vs_all": -0.07197230165214263
+    },
+    "drop_eye": {
+      "auc": 0.8779804659132171,
+      "delta_vs_all": -0.05134094725853322
+    },
+    "drop_mouth": {
+      "auc": 0.9345971200980394,
+      "delta_vs_all": 0.005275706926289092
+    },
+    "gaze_only": {
+      "auc": 0.8879679273329701,
+      "delta_vs_all": -0.04135348583878018
+    },
+    "face_only": {
+      "auc": 0.8573491115196077,
+      "delta_vs_all": -0.07197230165214263
+    }
+  }
+}

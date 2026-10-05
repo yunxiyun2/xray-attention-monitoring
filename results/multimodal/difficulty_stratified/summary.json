@@ -1,0 +1,48 @@
+{
+  "n_samples_total": 699,
+  "n_subjects": 20,
+  "difficulties": [
+    "all",
+    "easy",
+    "hard"
+  ],
+  "models": [
+    "E1_gaze_logreg",
+    "E2_face_mlp",
+    "E3_F3_cross_attn"
+  ],
+  "auc_matrix": {
+    "E1_gaze_logreg": {
+      "all": 0.9039259656408859,
+      "easy": 0.9018518518518519,
+      "hard": 0.8426215277777779
+    },
+    "E2_face_mlp": {
+      "all": 0.8589394119916486,
+      "easy": 0.8663966049382716,
+      "hard": 0.8100212191358025
+    },
+    "E3_F3_cross_attn": {
+      "all": 0.9293214131717503,
+      "easy": 0.9144868827160494,
+      "hard": 0.8732253086419753
+    }
+  },
+  "modulation_effect": {
+    "E1_gaze_logreg": {
+      "auc_easy": 0.9018518518518519,
+      "auc_hard": 0.8426215277777779,
+      "delta_easy_minus_hard": 0.059230324074074026
+    },
+    "E2_face_mlp": {
+      "auc_easy": 0.8663966049382716,
+      "auc_hard": 0.8100212191358025,
+      "delta_easy_minus_hard": 0.05637538580246915
+    },
+    "E3_F3_cross_attn": {
+      "auc_easy": 0.9144868827160494,
+      "auc_hard": 0.8732253086419753,
+      "delta_easy_minus_hard": 0.04126157407407405
+    }
+  }
+}

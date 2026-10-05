@@ -1,0 +1,96 @@
+{
+  "n_samples": 699,
+  "n_subjects": 20,
+  "gaze_dim": 10,
+  "face_dim": 12,
+  "feature_names": [
+    "mean_error",
+    "median_error",
+    "std_error",
+    "p95_error",
+    "inside_ratio_900",
+    "longest_run_900",
+    "inside_ratio_975",
+    "longest_run_975",
+    "inside_ratio_625",
+    "longest_run_625",
+    "face_perclos_80",
+    "face_long_closure_count",
+    "face_blink_count",
+    "face_blink_rate",
+    "face_blink_duration_mean",
+    "face_blink_amplitude_mean",
+    "face_ear_mean",
+    "face_ear_std",
+    "face_ear_min",
+    "face_mar_mean",
+    "face_mar_max",
+    "face_yawn_count"
+  ],
+  "models": {
+    "F1_early": {
+      "auc_mean": 0.8892230619099492,
+      "auc_std": 0.09681651456498916,
+      "auc_ci_lo": 0.777664369597044,
+      "auc_ci_hi": 0.8417461260714004,
+      "auc_pooled": 0.8105444126074499,
+      "brier_score": 0.19695377923435023,
+      "balacc_mean": 0.7537888071895426,
+      "f1_mean": 0.7106912210108687,
+      "wilcoxon_vs_0.5_p": 9.5367431640625e-07,
+      "rank_biserial_r": 1.0,
+      "n_folds": 20,
+      "n_positive_auc": 20
+    },
+    "F2_late": {
+      "auc_mean": 0.917442101261801,
+      "auc_std": 0.10363482589667164,
+      "auc_ci_lo": 0.8246780778045806,
+      "auc_ci_hi": 0.8783073758449759,
+      "auc_pooled": 0.8511256651657799,
+      "brier_score": 0.16317996932248494,
+      "balacc_mean": 0.7770220588235295,
+      "f1_mean": 0.7512621676291487,
+      "wilcoxon_vs_0.5_p": 9.5367431640625e-07,
+      "rank_biserial_r": 1.0,
+      "n_folds": 20,
+      "n_positive_auc": 20
+    },
+    "F3_cross_attn": {
+      "auc_mean": 0.9293214131717503,
+      "auc_std": 0.09352539277228096,
+      "auc_ci_lo": 0.816126972727955,
+      "auc_ci_hi": 0.8706529522495905,
+      "auc_pooled": 0.8433074089234547,
+      "brier_score": 0.16875100791882675,
+      "balacc_mean": 0.771578839869281,
+      "f1_mean": 0.7411260295520046,
+      "wilcoxon_vs_0.5_p": 9.5367431640625e-07,
+      "rank_biserial_r": 1.0,
+      "n_folds": 20,
+      "n_positive_auc": 20
+    }
+  },
+  "pairwise_tests": {
+    "F3_vs_F1": {
+      "wilcoxon_p": 0.008679815201218629,
+      "rank_biserial_r": 0.5428571428571429
+    },
+    "F3_vs_F2": {
+      "wilcoxon_p": 0.3045814455966936,
+      "rank_biserial_r": 0.03809523809523818
+    },
+    "F3_vs_E1_best": {
+      "baseline_model": "logreg",
+      "baseline_auc_mean": 0.9023827557643427,
+      "wilcoxon_p": 0.10480554370397638,
+      "rank_biserial_r": 0.32380952380952377
+    },
+    "F3_vs_E2_best": {
+      "baseline_model": "mlp",
+      "baseline_auc_mean": 0.8720625614080056,
+      "wilcoxon_p": 0.046406887973095425,
+      "rank_biserial_r": 0.38095238095238093
+    }
+  }
+}

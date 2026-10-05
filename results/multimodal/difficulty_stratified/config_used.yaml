@@ -1,0 +1,11 @@
+difficulties:
+- all
+- easy
+- hard
+inner_cv_folds: 3
+models:
+- E1_gaze_logreg
+- E2_face_mlp
+- E3_F3_cross_attn
+random_state: 42
+source_config: /bigdisk/dyx/xray-attention-monitoring/configs/multimodal.yaml

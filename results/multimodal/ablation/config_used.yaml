@@ -1,0 +1,11 @@
+conditions:
+- all
+- drop_gaze
+- drop_eye
+- drop_mouth
+- gaze_only
+- face_only
+inner_cv_folds: 3
+model: F3_cross_attn
+random_state: 42
+source_config: /bigdisk/dyx/xray-attention-monitoring/configs/multimodal.yaml

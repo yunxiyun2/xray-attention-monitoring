@@ -1,0 +1,25 @@
+# 多模态实验唯一参数源
+# 对应 spec v2.0 §5/§6/§7/§8
+
+window_sec: 60           # 标准窗口（PERCLOS 对齐）
+stride_train_sec: 30     # 训练步长（50% 重叠增广）
+stride_test_sec: 60      # 测试步长（不重叠，防自相关泄漏）
+multi_scale: [5, 30, 60] # 敏感性分析窗口
+
+threshold:               # 复用阈值阶段产物，不重新选
+  overall: 900
+  easy: 975
+  hard: 625
+
+models:
+  classical: [logreg, svm, rf]
+  deep: [mlp, lstm]
+  fusion: [F1_concat, F2_late, F3_cross_attn]
+
+nested_loso:
+  inner_scoring: balanced_accuracy
+  random_state: 42
+
+stats:
+  bootstrap_B: 2000
+  alpha: 0.05

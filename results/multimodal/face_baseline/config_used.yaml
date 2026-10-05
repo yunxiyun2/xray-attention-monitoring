@@ -1,0 +1,11 @@
+feature_csv: /bigdisk/dyx/xray-attention-monitoring/dataset/features/face_features.csv
+inner_cv_folds: 3
+modality: face
+models:
+- logreg
+- svm
+- rf
+- mlp
+- lstm
+random_state: 42
+source_config: /bigdisk/dyx/xray-attention-monitoring/configs/multimodal.yaml

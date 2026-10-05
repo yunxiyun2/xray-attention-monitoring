@@ -1,0 +1,9 @@
+face_dim: 12
+gaze_dim: 10
+inner_cv_folds: 3
+models:
+- F1_early
+- F2_late
+- F3_cross_attn
+random_state: 42
+source_config: /bigdisk/dyx/xray-attention-monitoring/configs/multimodal.yaml
