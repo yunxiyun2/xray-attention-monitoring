@@ -32,6 +32,3 @@ results/**
 !results/**/*.txt
 !results/**/*.yaml
 !results/**/*.yml
-
-# Biweekly report
-docs/biweekly_report/
