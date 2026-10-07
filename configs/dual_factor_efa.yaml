@@ -1,0 +1,52 @@
+# 疲劳目光行为双因子 EFA 实验唯一参数源
+data:
+  drozy_root: data_public/DROZY
+  channels: [EOG-H, EOG-V, Cam-Sync]
+  sampling_rate: 512
+  subjects: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+  exclude_tests: ["7-1"]   # KSS=0，无效
+
+preprocess:
+  highpass: 0.5
+  lowpass: 30.0
+  filter_order: 4
+  hampel_window: 51
+  hampel_threshold: 3.0    # MAD 倍数
+
+event_detection:
+  algorithm: I-VT
+  velocity_threshold: auto   # 基于速度分布百分位
+  velocity_percentile: 70    # auto 模式下的百分位
+  min_fixation_ms: 100
+  min_saccade_ms: 20
+
+windowing:
+  window_sec: 30
+  stride_sec: 10
+  min_fixations: 5
+  min_saccades: 3
+  normalization: within_subject_zscore
+
+spatial_grid:
+  bins: 5                    # 5x5 网格
+
+labels:
+  kss_file: KSS.txt
+  alert_threshold: 4          # KSS <= 4
+  drowsy_threshold: 6         # KSS >= 6
+  exclude_middle: true        # 排除 KSS=5
+
+efa:
+  extraction: pa              # 主轴因子
+  rotation: promax             # 斜交旋转
+  max_factors: 4
+  variance_threshold: 0.60
+  loading_threshold: 0.50
+  cross_loading_threshold: 0.30
+  factor_corr_threshold: 0.70
+  parallel_analysis_n_iter: 1000
+  parallel_analysis_percentile: 95
+
+output:
+  results_dir: results/dual_factor_efa
+  figures_dir: results/dual_factor_efa/figures

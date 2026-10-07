@@ -15,3 +15,5 @@ dependencies:
       - mediapipe>=0.10
       - opencv-python>=4.8
       - shap>=0.45
+      - pyedflib>=0.1.30
+      - factor_analyzer>=0.4.3
