@@ -10,6 +10,7 @@ __pycache__/
 # Raw/local datasets are intentionally not versioned.
 /data/
 /Distan_error（原20）/
+/data_public/
 
 # Large generated or model artifacts.
 *.mp4
