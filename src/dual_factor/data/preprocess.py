@@ -5,6 +5,7 @@ from typing import Tuple
 
 import numpy as np
 from scipy.signal import butter, filtfilt
+from scipy.ndimage import median_filter
 
 
 def bandpass_filter(
@@ -46,14 +47,15 @@ def hampel_filter(
     threshold : MAD 倍数阈值
     """
     n = len(signal)
-    half = window // 2
+    if n < window:
+        return signal.copy()
+    # 向量化：用 scipy.ndimage.median_filter 计算滑动中值
+    med = median_filter(signal, size=window, mode="nearest")
+    abs_dev = np.abs(signal - med)
+    mad = 1.4826 * median_filter(abs_dev, size=window, mode="nearest")
     out = signal.copy()
-    for i in range(half, n - half):
-        win = signal[i - half : i + half + 1]
-        med = np.median(win)
-        mad = 1.4826 * np.median(np.abs(win - med))
-        if mad > 0 and np.abs(signal[i] - med) > threshold * mad:
-            out[i] = med
+    mask = (mad > 0) & (abs_dev > threshold * mad)
+    out[mask] = med[mask]
     return out
 
 
