@@ -1,0 +1,9 @@
+indicator,proxy_category,risk_level,amplitude_sensitive
+FD,time,低（不依赖绝对幅度）,False
+PSV,amplitude,中（受 EOG 电位基线影响）,True
+SA,amplitude,中（受 EOG 电位基线影响）,True
+FN,time,低（不依赖绝对幅度）,False
+SE,distribution,低（只依赖概率分布形状）,False
+GTE,distribution,低（只依赖概率分布形状）,False
+SV,amplitude,中（受 EOG 电位基线影响）,True
+SDR,distribution,低（只依赖概率分布形状）,False

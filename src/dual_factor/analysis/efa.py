@@ -100,6 +100,121 @@ def run_efa(
     )
 
 
+def run_efa_fixed(
+    data: pd.DataFrame,
+    n_factors: int,
+    extraction: str = "pa",
+    rotation: str = "promax",
+) -> EFAResult:
+    """提取指定因子数的 EFA（不自动确定因子数，用于 2vs3 对比）。"""
+    method_map = {"pa": "principal", "ml": "ml", "minres": "minres"}
+    method = method_map.get(extraction, "principal")
+    rot_map = {"promax": "promax", "varimax": "varimax", "oblimin": "oblimin"}
+    rot = rot_map.get(rotation, "promax")
+
+    fa = FactorAnalyzer(n_factors=n_factors, rotation=rot, method=method)
+    fa.fit(data)
+    loadings = fa.loadings_
+    variance = fa.get_factor_variance()
+    cum_var = float(variance[2][-1]) if len(variance) >= 3 else 0.0
+    corr = fa.phi_ if hasattr(fa, "phi_") and fa.phi_ is not None else None
+
+    return EFAResult(
+        n_factors=n_factors,
+        loadings=loadings,
+        variance_explained=cum_var,
+        factor_corr=corr,
+        variable_names=list(data.columns),
+        parallel_analysis=None,
+    )
+
+
+def run_efa_compare(
+    data: pd.DataFrame,
+    n_factors_list: list[int] | None = None,
+    extraction: str = "pa",
+    rotation: str = "promax",
+    n_iter: int = 1000,
+    percentile: float = 95.0,
+    max_factors: int = 4,
+) -> dict:
+    """并行提取多个因子解并输出对比表。
+
+    默认对比 2 因子解和 3 因子解，回答：
+    1. 平行分析建议几个因子？
+    2. 2 因子解的交叉载荷是否 <0.3？
+    3. 3 因子解是否比 2 因子解显著降低交叉载荷？
+    4. 第三因子包含哪些指标？有无实质意义？
+    """
+    if n_factors_list is None:
+        n_factors_list = [2, 3]
+
+    # 平行分析确定建议因子数
+    pa = parallel_analysis(data, n_iter=n_iter, percentile=percentile, max_factors=max_factors)
+    actual_eigs = pa["actual_eigenvalues"]
+    rand_refs = pa["random_eigenvalues"]
+    pa_n_factors = 0
+    for k in range(min(len(actual_eigs), len(rand_refs))):
+        if actual_eigs[k] > rand_refs[k]:
+            pa_n_factors = k + 1
+        else:
+            break
+    if pa_n_factors == 0:
+        pa_n_factors = int(np.sum(np.array(actual_eigs) > 1.0)) or 1
+
+    results = {}
+    for nf in n_factors_list:
+        try:
+            res = run_efa_fixed(data, nf, extraction=extraction, rotation=rotation)
+            abs_loadings = np.abs(res.loadings)
+            max_loading = float(np.max(abs_loadings))
+
+            # 每变量最大载荷
+            per_var_max = np.max(abs_loadings, axis=1) if abs_loadings.ndim > 1 else abs_loadings
+            # 每变量次大载荷（交叉载荷）
+            if abs_loadings.ndim > 1 and abs_loadings.shape[1] > 1:
+                sorted_abs = np.sort(abs_loadings, axis=1)
+                per_var_cross = sorted_abs[:, -2]
+                cross_max = float(np.max(per_var_cross))
+            else:
+                cross_max = 0.0
+
+            # 指标归属（每指标最大载荷的因子号）
+            if abs_loadings.ndim > 1:
+                assignments = np.argmax(abs_loadings, axis=1).tolist()
+            else:
+                assignments = [0] * len(res.variable_names)
+
+            corr_val = float(res.factor_corr[0, 1]) if (
+                res.factor_corr is not None and res.factor_corr.shape[0] >= 2
+            ) else None
+
+            results[f"{nf}_factor"] = {
+                "n_factors": nf,
+                "variance_explained": res.variance_explained,
+                "loadings": res.loadings.tolist(),
+                "variable_names": res.variable_names,
+                "max_loading": max_loading,
+                "cross_loading_max": cross_max,
+                "factor_corr": corr_val,
+                "assignments": assignments,
+                "per_variable_max": per_var_max.tolist(),
+                "factor_corr_matrix": res.factor_corr.tolist() if res.factor_corr is not None else None,
+            }
+        except Exception as e:
+            results[f"{nf}_factor"] = {
+                "n_factors": nf,
+                "status": "error",
+                "message": str(e),
+            }
+
+    return {
+        "parallel_analysis_n_factors": pa_n_factors,
+        "parallel_analysis": pa,
+        "comparisons": results,
+    }
+
+
 def parallel_analysis(
     data: pd.DataFrame,
     n_iter: int = 1000,

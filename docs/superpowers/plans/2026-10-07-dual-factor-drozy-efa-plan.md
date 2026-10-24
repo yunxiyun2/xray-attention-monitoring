@@ -1742,6 +1742,7 @@ def test_directionality_test_returns_match():
 ```bash
 PYTHONPATH=src conda run -n Anomaly python -m pytest tests/dual_factor/test_descriptive.py -v
 ```
+
 Expected: FAIL
 
 - [ ] **Step 3: 实现 `descriptive.py`**
@@ -1826,6 +1827,7 @@ def directionality_test(df: pd.DataFrame, indicators: list[str], alert_max: int 
 ```bash
 PYTHONPATH=src conda run -n Anomaly python -m pytest tests/dual_factor/test_descriptive.py -v
 ```
+
 Expected: PASS
 
 - [ ] **Step 5: 提交**
@@ -1840,6 +1842,7 @@ git commit -m "feat(dual_factor): descriptive stats + directionality test vs H1/
 ## Task 11: 可视化与决策报告
 
 **Files:**
+
 - 创建: `src/dual_factor/analysis/plots.py`
 - 创建: `src/dual_factor/analysis/decision.py`
 - 创建: `tests/dual_factor/test_decision.py`
@@ -1847,6 +1850,7 @@ git commit -m "feat(dual_factor): descriptive stats + directionality test vs H1/
 **对应 spec**: §5.3 结果报告、§5.4 核心决策判据、§6.5 输出产物
 
 **Interfaces:**
+
 - Consumes: `EFAResult`、`precheck_efa` 结果、`directionality_test` 结果
 - Produces: 4 张图（scree_parallel.png / loading_matrix.png / factor_scatter.png / direction_check.png）+ `decision_report.md`
 
@@ -1914,6 +1918,7 @@ def test_decision_report_to_markdown():
 ```bash
 PYTHONPATH=src conda run -n Anomaly python -m pytest tests/dual_factor/test_decision.py -v
 ```
+
 Expected: FAIL
 
 - [ ] **Step 3: 实现 `decision.py`**
@@ -2101,6 +2106,7 @@ def plot_direction_check(df: pd.DataFrame, indicators: list[str], out_path: str 
 ```bash
 PYTHONPATH=src conda run -n Anomaly python -m pytest tests/dual_factor/test_decision.py -v
 ```
+
 Expected: PASS
 
 - [ ] **Step 6: 提交**
@@ -2115,12 +2121,14 @@ git commit -m "feat(dual_factor): visualizations + decision report generator"
 ## Task 12: 一键 Pipeline 入口与验收
 
 **Files:**
+
 - 创建: `src/dual_factor/pipeline.py`
 - 创建: `tests/dual_factor/test_pipeline_smoke.py`
 
 **对应 spec**: §6.2 包结构（pipeline.py）、§6.5 输出产物、§7 合格标准
 
 **Interfaces:**
+
 - Consumes: `configs/dual_factor_efa.yaml`
 - Produces: `results/dual_factor_efa/` 下全部 7 类产物
 
@@ -2179,6 +2187,7 @@ def test_pipeline_writes_required_outputs(tmp_path: Path) -> None:
 ```bash
 PYTHONPATH=src conda run -n Anomaly python -m pytest tests/dual_factor/test_pipeline_smoke.py -v
 ```
+
 Expected: FAIL
 
 - [ ] **Step 3: 实现 `pipeline.py`**
@@ -2346,6 +2355,7 @@ if __name__ == "__main__":
 ```bash
 PYTHONPATH=src conda run -n Anomaly python -m pytest tests/dual_factor/test_pipeline_smoke.py -v
 ```
+
 Expected: PASS（若 DROZY 数据可用）
 
 - [ ] **Step 5: 跑通真实数据全链条**
@@ -2353,11 +2363,13 @@ Expected: PASS（若 DROZY 数据可用）
 ```bash
 PYTHONPATH=src conda run -n Anomaly python -m dual_factor.pipeline --config configs/dual_factor_efa.yaml
 ```
+
 Expected: `results/dual_factor_efa/` 含全部 7 类产物 + 4 张图。
 
 - [ ] **Step 6: 验收（对照 spec §7 合格标准）**
 
 逐条核对：
+
 - [ ] DROZY 的 EDF 可读取，EOG 通道可提取（≥30 个测试可用）
 - [ ] 8 个指标全部计算成功，缺失率 <10%
 - [ ] KMO、Bartlett、EFA 全部完成
@@ -2366,7 +2378,6 @@ Expected: `results/dual_factor_efa/` 含全部 7 类产物 + 4 张图。
 - [ ] 核心图达论文初稿质量
 - [ ] 8 指标方向性检验完成
 - [ ] 决策报告明确下一步计划
-
 - [ ] **Step 7: 提交**
 
 ```bash
@@ -2380,31 +2391,31 @@ git commit -m "feat(dual_factor): end-to-end pipeline + acceptance verification"
 
 ### 1. Spec Coverage
 
-| Spec 章节 | 对应 Task |
-|---|---|
-| §1 研究背景与动机 | 全局背景，非代码 |
-| §2.1-2.3 DROZY 数据集 / EOG / KSS / PVT | Task 2 |
-| §2.4 辅助模态（视频/landmark） | 阶段四，本计划不含 |
-| §3.1 八个核心指标定义 | Task 5（呆滞）+ Task 6（发散） |
-| §3.2 I-VT 事件检测算法 | Task 4 |
-| §3.3 空间网格化 | Task 6（SE/GTE 内含） |
-| §4.1 数据读取（EDF/Cam-Sync） | Task 2 |
-| §4.2 信号预处理（滤波/Hampel） | Task 3 |
-| §4.3 窗口化 | Task 7 |
-| §4.4 被试内 z-score 标准化 | Task 7 |
-| §5.1 KMO + Bartlett 前置检验 | Task 8 |
-| §5.2 因子提取（PAF + Promax + 平行分析） | Task 9 |
-| §5.3 结果报告（碎石图/载荷/方差/相关/交叉载荷） | Task 9 + Task 11 |
-| §5.4 核心决策判据 | Task 11 |
-| §6.1 设计原则（非侵入式） | Task 1（包骨架） |
-| §6.2 包结构 | Task 1 + 各 Task 落地 |
-| §6.3 配置 | Task 1 |
-| §6.4 新增依赖 | Task 1 |
-| §6.5 输出产物（7 类 + 4 图） | Task 12（pipeline 汇总输出） |
-| §7 合格标准（最低/理想/不合格） | Task 12 Step 6 逐条勾核 |
-| §8 风险与预案 | 全局约束 + 各 Task 测试覆盖边界 |
-| §9 时间安排 | 14 天，对应 Task 1-12 顺序 |
-| §10 与旧代码关系 | 全局约束（非侵入式） |
+| Spec 章节                                        | 对应 Task                       |
+| ------------------------------------------------ | ------------------------------- |
+| §1 研究背景与动机                               | 全局背景，非代码                |
+| §2.1-2.3 DROZY 数据集 / EOG / KSS / PVT         | Task 2                          |
+| §2.4 辅助模态（视频/landmark）                  | 阶段四，本计划不含              |
+| §3.1 八个核心指标定义                           | Task 5（呆滞）+ Task 6（发散）  |
+| §3.2 I-VT 事件检测算法                          | Task 4                          |
+| §3.3 空间网格化                                 | Task 6（SE/GTE 内含）           |
+| §4.1 数据读取（EDF/Cam-Sync）                   | Task 2                          |
+| §4.2 信号预处理（滤波/Hampel）                  | Task 3                          |
+| §4.3 窗口化                                     | Task 7                          |
+| §4.4 被试内 z-score 标准化                      | Task 7                          |
+| §5.1 KMO + Bartlett 前置检验                    | Task 8                          |
+| §5.2 因子提取（PAF + Promax + 平行分析）        | Task 9                          |
+| §5.3 结果报告（碎石图/载荷/方差/相关/交叉载荷） | Task 9 + Task 11                |
+| §5.4 核心决策判据                               | Task 11                         |
+| §6.1 设计原则（非侵入式）                       | Task 1（包骨架）                |
+| §6.2 包结构                                     | Task 1 + 各 Task 落地           |
+| §6.3 配置                                       | Task 1                          |
+| §6.4 新增依赖                                   | Task 1                          |
+| §6.5 输出产物（7 类 + 4 图）                    | Task 12（pipeline 汇总输出）    |
+| §7 合格标准（最低/理想/不合格）                 | Task 12 Step 6 逐条勾核         |
+| §8 风险与预案                                   | 全局约束 + 各 Task 测试覆盖边界 |
+| §9 时间安排                                     | 14 天，对应 Task 1-12 顺序      |
+| §10 与旧代码关系                                | 全局约束（非侵入式）            |
 
 ### 2. Placeholder Scan
 
@@ -2451,10 +2462,14 @@ Plan complete and saved to `docs/superpowers/plans/2026-10-07-dual-factor-drozy-
 建议执行顺序：Task 1 → Task 2 → Task 3 → Task 4 → Task 5 → Task 6 → Task 7 → Task 8 → Task 9 → Task 10 → Task 11 → Task 12。
 
 **关键检查点**：
+
 - Task 2 完成后：验证 37 个测试 EOG 全部可读（若 <30 个可用，触发 spec §8 风险预案）
 - Task 7 完成后：检查指标缺失率（若 >10%，调整窗口参数或 min_fixations）
 - Task 9 完成后：检查因子数与相关（若 r > 0.85 或仅 1 因子，准备否定结果报告）
 - Task 12 完成后：对照 spec §7 逐条验收
 
 Which approach?
+
+```
+
 ```

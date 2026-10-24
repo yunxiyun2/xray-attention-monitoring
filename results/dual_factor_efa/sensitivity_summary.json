@@ -1,0 +1,24 @@
+{
+  "window_level_n_factors": 3,
+  "subject_level_n_factors": 4,
+  "nonoverlap_n_factors": 2,
+  "loso_n_factors_mode": 3,
+  "loso_n_factors_list": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+  ],
+  "consistent": false,
+  "conclusion": "被试级结论与窗口级不一致，因子结构跨方法不稳定，需如实报告"
+}

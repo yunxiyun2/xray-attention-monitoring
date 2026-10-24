@@ -1,0 +1,62 @@
+data:
+  channels:
+  - EOG-H
+  - EOG-V
+  - Cam-Sync
+  drozy_root: data_public/DROZY
+  exclude_tests:
+  - 7-1
+  sampling_rate: 512
+  subjects:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+efa:
+  cross_loading_threshold: 0.3
+  extraction: pa
+  factor_corr_threshold: 0.7
+  loading_threshold: 0.5
+  max_factors: 4
+  parallel_analysis_n_iter: 1000
+  parallel_analysis_percentile: 95
+  rotation: promax
+  variance_threshold: 0.6
+event_detection:
+  algorithm: I-VT
+  min_fixation_ms: 100
+  min_saccade_ms: 20
+  velocity_percentile: 70
+  velocity_threshold: auto
+labels:
+  alert_threshold: 4
+  drowsy_threshold: 6
+  exclude_middle: true
+  kss_file: KSS.txt
+output:
+  figures_dir: results/dual_factor_efa/figures
+  results_dir: results/dual_factor_efa
+preprocess:
+  filter_order: 4
+  hampel_threshold: 3.0
+  hampel_window: 51
+  highpass: 0.5
+  lowpass: 30.0
+spatial_grid:
+  bins: 5
+windowing:
+  min_fixations: 5
+  min_saccades: 3
+  normalization: within_subject_zscore
+  stride_sec: 10
+  window_sec: 30
