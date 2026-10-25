@@ -1,0 +1,33 @@
+{
+  "window_level_n_factors": 2,
+  "subject_level_n_factors": 3,
+  "nonoverlap_n_factors": 2,
+  "loso_n_factors_mode": 2,
+  "loso_n_factors_list": [
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+  ],
+  "consistent": false,
+  "conclusion": "被试级结论与窗口级不一致，因子结构跨方法不稳定，需如实报告",
+  "loso_2factor": {
+    "n_folds": 14,
+    "n_ok": 14,
+    "n_rebound": 0,
+    "rebound_ratio": 0.0,
+    "rebound_subjects": [],
+    "cross_max_median": 0.17181403779866405,
+    "factor_corr_median": 0.00674403125249707
+  }
+}

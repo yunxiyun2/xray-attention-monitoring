@@ -23,6 +23,15 @@ data:
   - 13
   - 14
 efa:
+  correction:
+    cross_loading_max: 0.3
+    enabled: true
+    factor_corr_max: 0.7
+    loading_clarity: 0.5
+    max_prunes: 3
+    min_indicators: 5
+    min_per_factor: 2
+    variance_min: 0.6
   cross_loading_threshold: 0.3
   extraction: pa
   factor_corr_threshold: 0.7

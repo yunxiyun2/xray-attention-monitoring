@@ -6,6 +6,11 @@
   - 构念效度论证（EOG 代理效度分类 + 幅度归一化校正）
   - 严格判据 C1-C5 执行与三选一决策
 
+集成 SPEC v3.0（路径 B 执行）：
+  - Step 7.5：预注册指标修剪阶梯（correction.enabled 时启用）
+  - 修正后敏感性分析（最终保留集 + LOSO 2 因子固定解）
+  - Step 10：修正后决策报告（A/C 收口）；enabled: false 时回退 v2 行为
+
 用法（从项目根目录）：
     conda run -n Anomaly python -m dual_factor.pipeline --config configs/dual_factor_efa.yaml
 """
@@ -32,6 +37,10 @@ from dual_factor.analysis.sensitivity import (
 from dual_factor.analysis.construct_validity import (
     proxy_validity_report, amplitude_normalization,
     direction_correction_report, construct_validity_summary,
+)
+from dual_factor.analysis.correction import (
+    run_correction_ladder, loso_fixed_2factor, summarize_loso_2factor,
+    format_final_decision,
 )
 from dual_factor.analysis.plots import (
     plot_scree_parallel, plot_loading_matrix, plot_factor_scatter, plot_direction_check,
@@ -201,6 +210,76 @@ def run_pipeline(config: dict) -> None:
                   f"cross_max={comp['cross_loading_max']:.3f}, "
                   f"corr={comp['factor_corr']}")
 
+    # 7.5 修正后 EFA：预注册修剪阶梯（SPEC v3.0 路径 B）
+    correction_cfg = efa_cfg.get("correction", {})
+    ladder = None
+    if correction_cfg.get("enabled", False):
+        print("[7.5/10] Correction ladder (pre-registered pruning rule)...")
+        ladder = run_correction_ladder(
+            efa_input, correction_cfg=correction_cfg,
+            extraction=efa_cfg["extraction"], rotation=efa_cfg["rotation"],
+            n_iter=efa_cfg.get("parallel_analysis_n_iter", 1000),
+            percentile=efa_cfg.get("parallel_analysis_percentile", 95),
+        )
+        ladder_json = {k: v for k, v in ladder.items() if k != "final_efa_result"}
+        with open(results_dir / "correction_ladder.json", "w", encoding="utf-8") as f:
+            json.dump(ladder_json, f, ensure_ascii=False, indent=2)
+        for rg in ladder["rungs"]:
+            crit = rg["criteria"]
+            marks = "".join(
+                "✅" if crit[k]["passed"] else "❌"
+                for k in ["C1_variance", "C2_loading_clarity", "C3_cross_loading", "C4_factor_corr"]
+            )
+            pr = rg.get("pruned_this_rung")
+            pr_str = f", prune={pr['indicator']}({pr['reason_code']})" if pr else ""
+            print(f"  rung {rg['rung']}: n={rg['n_indicators']}, "
+                  f"var={rg['variance_explained']:.3f}, "
+                  f"cross={rg['max_cross_loading']:.3f}, {marks}{pr_str}")
+        print(f"  Ladder verdict: {ladder['final']['verdict']} ({ladder['stop_reason']})")
+
+        # 修正后敏感性分析：在最终保留指标集上重跑（SPEC v3.0 §2）
+        active = ladder["final"]["active_indicators"]
+        print(f"  Corrected sensitivity on retained set: {active}")
+        corr_subj = subject_level_efa(
+            valid_df, subject_col="subject", indicator_cols=active,
+            suffix="_z", extraction=efa_cfg["extraction"], rotation=efa_cfg["rotation"],
+            max_factors=efa_cfg["max_factors"],
+            variance_threshold=efa_cfg["variance_threshold"],
+        )
+        corr_loso = loso_efa(
+            valid_df, subject_col="subject", indicator_cols=active,
+            suffix="_z", extraction=efa_cfg["extraction"], rotation=efa_cfg["rotation"],
+            max_factors=efa_cfg["max_factors"],
+            variance_threshold=efa_cfg["variance_threshold"],
+        )
+        corr_nonoverlap = nonoverlap_efa(
+            valid_df, subject_col="subject", indicator_cols=active,
+            window_col="window_idx", window_sec=wn["window_sec"], stride_sec=wn["stride_sec"],
+            suffix="_z", extraction=efa_cfg["extraction"], rotation=efa_cfg["rotation"],
+            max_factors=efa_cfg["max_factors"],
+            variance_threshold=efa_cfg["variance_threshold"],
+        )
+        corr_sens = sensitivity_summary(
+            window_efa_result={"n_factors": ladder["final"]["parallel_analysis_n_factors"]},
+            subject_efa_result=corr_subj,
+            loso_df=corr_loso,
+            nonoverlap_efa_result=corr_nonoverlap,
+        )
+        # LOSO 2 因子固定解：直接回答"2 因子结构跨被试稳不稳"
+        corr_loso2 = loso_fixed_2factor(
+            valid_df, subject_col="subject", indicator_cols=active,
+            suffix="_z", extraction=efa_cfg["extraction"], rotation=efa_cfg["rotation"],
+        )
+        corr_loso2.to_csv(results_dir / "corrected_loso_2factor.csv",
+                          index=False, encoding="utf-8")
+        loso2_summary = summarize_loso_2factor(
+            corr_loso2, cross_threshold=correction_cfg.get("cross_loading_max", 0.30))
+        corr_sens["loso_2factor"] = loso2_summary
+        with open(results_dir / "corrected_sensitivity_summary.json", "w", encoding="utf-8") as f:
+            json.dump(corr_sens, f, ensure_ascii=False, indent=2, default=str)
+        print(f"  Corrected sensitivity consistent={corr_sens['consistent']}; "
+              f"LOSO-2f rebound {loso2_summary['n_rebound']}/{loso2_summary['n_ok']} folds")
+
     # 8. 构念效度论证（SPEC v2.0 Task 7）
     print("[8/10] Construct validity report...")
     proxy = proxy_validity_report(valid_df, INDICATORS)
@@ -226,29 +305,43 @@ def run_pipeline(config: dict) -> None:
     plot_loading_matrix(result, figures_dir / "loading_matrix.png")
     plot_factor_scatter(result, figures_dir / "factor_scatter.png")
     plot_direction_check(valid_df, INDICATORS, figures_dir / "direction_check.png")
+    if ladder is not None and ladder.get("final_efa_result") is not None:
+        plot_loading_matrix(ladder["final_efa_result"],
+                            figures_dir / "loading_matrix_corrected.png")
 
-    # 10. 严格判据决策报告（SPEC v2.0 Task 6：C1-C5 逐项检查 + 三选一决策）
-    print("[10/10] Writing decision report (strict criteria C1-C5)...")
-    abs_loadings = np.abs(result.loadings)
-    max_loading = float(np.max(abs_loadings))
-    if result.loadings.shape[1] > 1:
-        sorted_abs = np.sort(abs_loadings, axis=1)
-        cross_max = float(np.max(sorted_abs[:, -2]))
+    # 10. 严格判据决策报告
+    #     v3：correction.enabled 时写修正后决策（阶梯收口 A/C）；否则保持 v2 行为
+    print("[10/10] Writing decision report (strict criteria)...")
+    if ladder is not None:
+        report_md = format_final_decision(
+            ladder,
+            corrected_sensitivity=corr_sens,
+            loso2_summary=loso2_summary,
+        )
+        with open(results_dir / "decision_report.md", "w", encoding="utf-8") as f:
+            f.write(report_md)
+        print(f"  Verdict: {ladder['final']['verdict']} — {ladder['stop_reason']}")
     else:
-        cross_max = 0.0
-    corr_val = float(result.factor_corr[0, 1]) if (
-        result.factor_corr is not None and result.factor_corr.shape[0] >= 2
-    ) else None
-    subject_consistent = sens.get("consistent", None)
-    report = make_decision(
-        n_factors=result.n_factors, factor_corr=corr_val,
-        max_loading=max_loading, cross_loading_max=cross_max,
-        variance_explained=result.variance_explained,
-        subject_level_consistent=subject_consistent,
-    )
-    with open(results_dir / "decision_report.md", "w", encoding="utf-8") as f:
-        f.write(report.to_markdown())
-    print(f"  Verdict: {report.verdict_label}")
+        abs_loadings = np.abs(result.loadings)
+        max_loading = float(np.max(abs_loadings))
+        if result.loadings.shape[1] > 1:
+            sorted_abs = np.sort(abs_loadings, axis=1)
+            cross_max = float(np.max(sorted_abs[:, -2]))
+        else:
+            cross_max = 0.0
+        corr_val = float(result.factor_corr[0, 1]) if (
+            result.factor_corr is not None and result.factor_corr.shape[0] >= 2
+        ) else None
+        subject_consistent = sens.get("consistent", None)
+        report = make_decision(
+            n_factors=result.n_factors, factor_corr=corr_val,
+            max_loading=max_loading, cross_loading_max=cross_max,
+            variance_explained=result.variance_explained,
+            subject_level_consistent=subject_consistent,
+        )
+        with open(results_dir / "decision_report.md", "w", encoding="utf-8") as f:
+            f.write(report.to_markdown())
+        print(f"  Verdict: {report.verdict_label}")
     print(f"Done. Results at {results_dir}")
 
 

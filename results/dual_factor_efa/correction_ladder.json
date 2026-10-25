@@ -1,0 +1,327 @@
+{
+  "config": {
+    "enabled": true,
+    "max_prunes": 3,
+    "min_indicators": 5,
+    "min_per_factor": 2,
+    "variance_min": 0.6,
+    "loading_clarity": 0.5,
+    "cross_loading_max": 0.3,
+    "factor_corr_max": 0.7
+  },
+  "rungs": [
+    {
+      "rung": 0,
+      "active_indicators": [
+        "FD",
+        "PSV",
+        "SA",
+        "FN",
+        "SE",
+        "GTE",
+        "SV",
+        "SDR"
+      ],
+      "n_indicators": 8,
+      "variance_explained": 0.5440786698310021,
+      "min_primary_loading": 0.12350257174995931,
+      "max_cross_loading": 0.4690558055393681,
+      "factor_corr": -0.04808166411067912,
+      "loadings": [
+        [
+          0.6211340360866651,
+          -0.09930843555662366
+        ],
+        [
+          0.7131259551306908,
+          -0.04999917548242685
+        ],
+        [
+          0.8648781703189405,
+          -0.08306505238927639
+        ],
+        [
+          0.5770142393791285,
+          0.16262975542025335
+        ],
+        [
+          0.008827397003421505,
+          0.9470531338007675
+        ],
+        [
+          0.14782315264569165,
+          0.9610061541790763
+        ],
+        [
+          0.5002909023969769,
+          -0.4690558055393681
+        ],
+        [
+          0.12350257174995931,
+          0.06061303386995505
+        ]
+      ],
+      "variable_names": [
+        "FD",
+        "PSV",
+        "SA",
+        "FN",
+        "SE",
+        "GTE",
+        "SV",
+        "SDR"
+      ],
+      "criteria": {
+        "C1_variance": {
+          "value": 0.5440786698310021,
+          "threshold": "> 0.6",
+          "passed": false
+        },
+        "C2_loading_clarity": {
+          "value": 0.12350257174995931,
+          "threshold": ">= 0.5",
+          "passed": false
+        },
+        "C3_cross_loading": {
+          "value": 0.4690558055393681,
+          "threshold": "< 0.3",
+          "passed": false
+        },
+        "C4_factor_corr": {
+          "value": -0.04808166411067912,
+          "threshold": "|r| < 0.7",
+          "passed": true
+        },
+        "all_pass": false
+      },
+      "parallel_analysis_n_factors": 3,
+      "pruned_this_rung": {
+        "indicator": "SV",
+        "reason_code": "cross_loading",
+        "detail": "SV 交叉载荷 0.469 ≥ 0.3（全指标最高）",
+        "proxy_class": "amplitude",
+        "proxy_class_label": "幅度依赖型"
+      }
+    },
+    {
+      "rung": 1,
+      "active_indicators": [
+        "FD",
+        "PSV",
+        "SA",
+        "FN",
+        "SE",
+        "GTE",
+        "SDR"
+      ],
+      "n_indicators": 7,
+      "variance_explained": 0.5815672818736082,
+      "min_primary_loading": 0.12015059011686806,
+      "max_cross_loading": 0.1424502961471286,
+      "factor_corr": 0.11175111447625856,
+      "loadings": [
+        [
+          0.6188548628754009,
+          -0.1142994223933704
+        ],
+        [
+          0.7596342594947998,
+          -0.1229868528305392
+        ],
+        [
+          0.8940334153213785,
+          -0.1424502961471286
+        ],
+        [
+          0.5712780960049468,
+          0.12570626901766074
+        ],
+        [
+          -0.11202591373717484,
+          0.9675967962988822
+        ],
+        [
+          0.023758425578939105,
+          0.9769747253031769
+        ],
+        [
+          0.12015059011686806,
+          0.05227934129036047
+        ]
+      ],
+      "variable_names": [
+        "FD",
+        "PSV",
+        "SA",
+        "FN",
+        "SE",
+        "GTE",
+        "SDR"
+      ],
+      "criteria": {
+        "C1_variance": {
+          "value": 0.5815672818736082,
+          "threshold": "> 0.6",
+          "passed": false
+        },
+        "C2_loading_clarity": {
+          "value": 0.12015059011686806,
+          "threshold": ">= 0.5",
+          "passed": false
+        },
+        "C3_cross_loading": {
+          "value": 0.1424502961471286,
+          "threshold": "< 0.3",
+          "passed": true
+        },
+        "C4_factor_corr": {
+          "value": 0.11175111447625856,
+          "threshold": "|r| < 0.7",
+          "passed": true
+        },
+        "all_pass": false
+      },
+      "parallel_analysis_n_factors": 3,
+      "pruned_this_rung": {
+        "indicator": "SDR",
+        "reason_code": "low_loading",
+        "detail": "SDR 主载荷 0.120 < 0.5（全指标最低）",
+        "proxy_class": "distribution",
+        "proxy_class_label": "分布形态型"
+      }
+    },
+    {
+      "rung": 2,
+      "active_indicators": [
+        "FD",
+        "PSV",
+        "SA",
+        "FN",
+        "SE",
+        "GTE"
+      ],
+      "n_indicators": 6,
+      "variance_explained": 0.6660083179900074,
+      "min_primary_loading": 0.566838278008099,
+      "max_cross_loading": 0.16583380994181574,
+      "factor_corr": 0.005716409623024328,
+      "loadings": [
+        [
+          0.615673985826702,
+          -0.06510374735973685
+        ],
+        [
+          0.765906767303611,
+          -0.05663037042751151
+        ],
+        [
+          0.8829794231380819,
+          -0.07543125403217502
+        ],
+        [
+          0.566838278008099,
+          0.16583380994181574
+        ],
+        [
+          -0.08021459344998588,
+          0.9605080722199306
+        ],
+        [
+          0.051968409586643574,
+          0.9783030732026299
+        ]
+      ],
+      "variable_names": [
+        "FD",
+        "PSV",
+        "SA",
+        "FN",
+        "SE",
+        "GTE"
+      ],
+      "criteria": {
+        "C1_variance": {
+          "value": 0.6660083179900074,
+          "threshold": "> 0.6",
+          "passed": true
+        },
+        "C2_loading_clarity": {
+          "value": 0.566838278008099,
+          "threshold": ">= 0.5",
+          "passed": true
+        },
+        "C3_cross_loading": {
+          "value": 0.16583380994181574,
+          "threshold": "< 0.3",
+          "passed": true
+        },
+        "C4_factor_corr": {
+          "value": 0.005716409623024328,
+          "threshold": "|r| < 0.7",
+          "passed": true
+        },
+        "all_pass": true
+      },
+      "parallel_analysis_n_factors": 2,
+      "pruned_this_rung": null
+    }
+  ],
+  "pruned": [
+    {
+      "indicator": "SV",
+      "reason_code": "cross_loading",
+      "detail": "SV 交叉载荷 0.469 ≥ 0.3（全指标最高）",
+      "proxy_class": "amplitude",
+      "proxy_class_label": "幅度依赖型"
+    },
+    {
+      "indicator": "SDR",
+      "reason_code": "low_loading",
+      "detail": "SDR 主载荷 0.120 < 0.5（全指标最低）",
+      "proxy_class": "distribution",
+      "proxy_class_label": "分布形态型"
+    }
+  ],
+  "stop_reason": "rung 2 判据 C1-C4 全部通过",
+  "final": {
+    "verdict": "supported",
+    "active_indicators": [
+      "FD",
+      "PSV",
+      "SA",
+      "FN",
+      "SE",
+      "GTE"
+    ],
+    "n_indicators": 6,
+    "n_prunes": 2,
+    "variance_explained": 0.6660083179900074,
+    "min_primary_loading": 0.566838278008099,
+    "max_cross_loading": 0.16583380994181574,
+    "factor_corr": 0.005716409623024328,
+    "criteria": {
+      "C1_variance": {
+        "value": 0.6660083179900074,
+        "threshold": "> 0.6",
+        "passed": true
+      },
+      "C2_loading_clarity": {
+        "value": 0.566838278008099,
+        "threshold": ">= 0.5",
+        "passed": true
+      },
+      "C3_cross_loading": {
+        "value": 0.16583380994181574,
+        "threshold": "< 0.3",
+        "passed": true
+      },
+      "C4_factor_corr": {
+        "value": 0.005716409623024328,
+        "threshold": "|r| < 0.7",
+        "passed": true
+      },
+      "all_pass": true
+    },
+    "parallel_analysis_n_factors": 2
+  }
+}

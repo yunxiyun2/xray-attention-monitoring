@@ -46,6 +46,16 @@ efa:
   factor_corr_threshold: 0.70
   parallel_analysis_n_iter: 1000
   parallel_analysis_percentile: 95
+  # v3 路径 B：预注册指标修剪阶梯（SPEC 2026-10-25 §1，结果出来后不得修改阈值）
+  correction:
+    enabled: true
+    max_prunes: 3              # 剔除预算上限（8→5）
+    min_indicators: 5          # 保留指标总数下限
+    min_per_factor: 2          # 各假设因子保留下限
+    variance_min: 0.60         # C1：2因子解累计方差
+    loading_clarity: 0.50      # C2'：保留指标主载荷下限（逐指标）
+    cross_loading_max: 0.30    # C3：最大交叉载荷
+    factor_corr_max: 0.70      # C4：两因子相关
 
 output:
   results_dir: results/dual_factor_efa
