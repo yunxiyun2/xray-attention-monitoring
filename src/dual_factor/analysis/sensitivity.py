@@ -5,7 +5,7 @@ import json
 import numpy as np
 import pandas as pd
 
-from dual_factor.analysis.efa import run_efa, precheck_efa
+from dual_factor.analysis.efa import run_efa, run_efa_fixed, precheck_efa
 
 
 def aggregate_subject_level(
@@ -262,3 +262,108 @@ def sensitivity_summary(
         "conclusion": "被试级结论与窗口级一致，因子结构跨方法稳健" if consistent
                       else "被试级结论与窗口级不一致，因子结构跨方法不稳定，需如实报告",
     }
+
+
+# 假设因子分组（固定，与 correction.py 一致）
+_HYPOACTIVE = ["FD", "PSV", "SA", "FN"]
+_DIFFUSE = ["SE", "GTE", "SV", "SDR"]
+
+
+def per_subject_efa(
+    df: pd.DataFrame,
+    subject_col: str,
+    indicator_cols: list[str],
+    n_factors: int = 2,
+    suffix: str = "_z",
+) -> pd.DataFrame:
+    """逐被试 EFA：对每名被试的窗口单独做 2 因子固定解 EFA，形成被试级汇总表。
+
+    每被试输出：subject_id, n_windows, n_factors, direction_consistent（载荷方向一致性）、
+    cross_loading_max（交叉载荷最大值）、factor_corr（因子相关）、variance_explained、status。
+    若窗口数不足（< 指标数×3）或 EFA 不收敛，记录跳过/错误原因但继续处理其他被试。
+    """
+    # 解析指标列名（优先 _z 后缀）
+    z_cols = [f"{c}{suffix}" for c in indicator_cols]
+    available = [c for c in z_cols if c in df.columns]
+    if not available:
+        available = [c for c in indicator_cols if c in df.columns]
+    if not available:
+        raise ValueError(f"指标列 {indicator_cols} 在 DataFrame 中不存在")
+
+    # 去掉后缀得到 base 名，用于方向判断
+    base_names = [c[:-len(suffix)] if c.endswith(suffix) else c for c in available]
+
+    valid = df[df["valid"]] if "valid" in df.columns else df
+    subjects = sorted(valid[subject_col].unique())
+    min_samples = len(indicator_cols) * 3  # 窗口数下限：指标数×3
+
+    results = []
+    for subj in subjects:
+        subj_data = valid[valid[subject_col] == subj][available].dropna()
+        n_windows = int(subj_data.shape[0])
+
+        row = {
+            "subject_id": subj,
+            "n_windows": n_windows,
+            "n_factors": None,
+            "direction_consistent": None,
+            "cross_loading_max": None,
+            "factor_corr": None,
+            "variance_explained": None,
+            "status": "",
+        }
+
+        # 窗口数不足，记录跳过原因
+        if n_windows < min_samples:
+            row["status"] = f"skipped: 窗口数 {n_windows} < {min_samples}（指标数×3）"
+            results.append(row)
+            continue
+
+        try:
+            result = run_efa_fixed(
+                subj_data, n_factors=n_factors,
+                extraction="pa", rotation="promax",
+            )
+            loadings = result.loadings  # (n_vars, n_factors)
+            abs_loadings = np.abs(loadings)
+
+            # 交叉载荷最大值：每指标次大绝对载荷中的最大值
+            if abs_loadings.shape[1] > 1:
+                sorted_abs = np.sort(abs_loadings, axis=1)
+                cross_max = float(np.max(sorted_abs[:, -2]))
+            else:
+                cross_max = 0.0
+
+            # 因子相关（promax 斜交旋转才有 phi_）
+            corr_val = float(result.factor_corr[0, 1]) if (
+                result.factor_corr is not None and result.factor_corr.shape[0] >= 2
+            ) else None
+
+            # 载荷方向一致性：呆滞簇（FD/PSV/SA/FN）全在同一因子，
+            # 发散簇（SE/GTE/SV/SDR）全在另一因子，且两簇因子编号不同
+            assignments = np.argmax(abs_loadings, axis=1)  # 每指标的主因子编号
+            hypo_assign = [assignments[i] for i, name in enumerate(base_names) if name in _HYPOACTIVE]
+            diff_assign = [assignments[i] for i, name in enumerate(base_names) if name in _DIFFUSE]
+            direction_ok = False
+            if hypo_assign and diff_assign:
+                direction_ok = (
+                    len(set(hypo_assign)) == 1
+                    and len(set(diff_assign)) == 1
+                    and set(hypo_assign) != set(diff_assign)
+                )
+
+            row.update({
+                "n_factors": result.n_factors,
+                "direction_consistent": bool(direction_ok),
+                "cross_loading_max": cross_max,
+                "factor_corr": corr_val,
+                "variance_explained": result.variance_explained,
+                "status": "ok",
+            })
+        except Exception as e:
+            # EFA 不收敛，记录错误但继续处理其他被试
+            row["status"] = f"error: {e}"
+
+        results.append(row)
+
+    return pd.DataFrame(results)

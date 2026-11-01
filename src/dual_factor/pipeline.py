@@ -1,4 +1,4 @@
-"""一键运行：DROZY → 预处理 → 8 指标 → 窗口化 → EFA → 敏感性分析 → 构念效度 → 决策报告。
+"""一键运行：DROZY → 预处理 → 8 指标 → 窗口化 → EFA → 敏感性分析 → 构念效度 → 决策报告 → CFA 验证。
 
 集成 SPEC v2.0 全部要求：
   - 窗口非独立性敏感性分析（被试级聚合 EFA / LOSO-EFA / 非重叠窗口 EFA）
@@ -10,6 +10,9 @@
   - Step 7.5：预注册指标修剪阶梯（correction.enabled 时启用）
   - 修正后敏感性分析（最终保留集 + LOSO 2 因子固定解）
   - Step 10：修正后决策报告（A/C 收口）；enabled: false 时回退 v2 行为
+
+集成 L3 CFA 验证：
+  - Step 11：对 EFA 保留的六指标两因子结构做 CFA，检验拟合优度
 
 用法（从项目根目录）：
     conda run -n Anomaly python -m dual_factor.pipeline --config configs/dual_factor_efa.yaml
@@ -46,6 +49,12 @@ from dual_factor.analysis.plots import (
     plot_scree_parallel, plot_loading_matrix, plot_factor_scatter, plot_direction_check,
 )
 from dual_factor.analysis.decision import make_decision
+from dual_factor.analysis.cfa import (
+    RETAINED as CFA_RETAINED,
+    run_cfa,
+    per_subject_cfa,
+    save_cfa_result,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -62,14 +71,14 @@ def run_pipeline(config: dict) -> None:
         yaml.safe_dump(config, f, allow_unicode=True)
 
     # 1. 数据读取
-    print("[1/10] Loading DROZY records...")
+    print("[1/11] Loading DROZY records...")
     records = load_all_records(
         config["data"]["drozy_root"], config["data"]["channels"]
     )
     print(f"  Loaded {len(records)} records")
 
     # 2. 预处理 + 窗口化 + 指标计算
-    print("[2/10] Preprocessing + windowing + indicators...")
+    print("[2/11] Preprocessing + windowing + indicators...")
     frames = []
     pp = config["preprocess"]
     ed = config["event_detection"]
@@ -104,7 +113,7 @@ def run_pipeline(config: dict) -> None:
           f"{full['valid'].eq(False).mean():.2%}")
 
     # 3. 描述性统计 + 方向性检验 + 指标分布质量报告
-    print("[3/10] Descriptive stats + directionality test + distribution report...")
+    print("[3/11] Descriptive stats + directionality test + distribution report...")
     valid_df = full[full["valid"]].copy()
     desc = descriptive_stats(
         valid_df, INDICATORS,
@@ -123,7 +132,7 @@ def run_pipeline(config: dict) -> None:
                        index=False, encoding="utf-8")
 
     # 4. EFA 前置检验
-    print("[4/10] KMO + Bartlett pre-check...")
+    print("[4/11] KMO + Bartlett pre-check...")
     efa_input = valid_df[z_cols].dropna()
     efa_input.columns = INDICATORS  # 重命名列去掉 _z 后缀
     precheck = precheck_efa(efa_input)
@@ -132,7 +141,7 @@ def run_pipeline(config: dict) -> None:
     print(f"  KMO={precheck['kmo_overall']:.3f}, Bartlett p={precheck['bartlett_p']:.2e}")
 
     # 5. EFA 因子提取
-    print("[5/10] EFA extraction + parallel analysis...")
+    print("[5/11] EFA extraction + parallel analysis...")
     efa_cfg = config["efa"]
     result = run_efa(
         efa_input, extraction=efa_cfg["extraction"],
@@ -154,7 +163,7 @@ def run_pipeline(config: dict) -> None:
     print(f"  Factors={result.n_factors}, Var={result.variance_explained:.3f}")
 
     # 6. 窗口非独立性敏感性分析（SPEC v2.0 Task 4）
-    print("[6/10] Sensitivity analysis (subject-level / LOSO / non-overlap)...")
+    print("[6/11] Sensitivity analysis (subject-level / LOSO / non-overlap)...")
     wn = config["windowing"]
     subj_efa = subject_level_efa(
         valid_df, subject_col="subject", indicator_cols=INDICATORS,
@@ -194,7 +203,7 @@ def run_pipeline(config: dict) -> None:
     print(f"  Sensitivity consistent={sens['consistent']}: {sens['conclusion']}")
 
     # 7. 2因子 vs 3因子强制对比（SPEC v2.0 Task 5）
-    print("[7/10] 2-factor vs 3-factor comparison...")
+    print("[7/11] 2-factor vs 3-factor comparison...")
     compare = run_efa_compare(
         efa_input, n_factors_list=[2, 3],
         extraction=efa_cfg["extraction"], rotation=efa_cfg["rotation"],
@@ -214,7 +223,7 @@ def run_pipeline(config: dict) -> None:
     correction_cfg = efa_cfg.get("correction", {})
     ladder = None
     if correction_cfg.get("enabled", False):
-        print("[7.5/10] Correction ladder (pre-registered pruning rule)...")
+        print("[7.5/11] Correction ladder (pre-registered pruning rule)...")
         ladder = run_correction_ladder(
             efa_input, correction_cfg=correction_cfg,
             extraction=efa_cfg["extraction"], rotation=efa_cfg["rotation"],
@@ -281,7 +290,7 @@ def run_pipeline(config: dict) -> None:
               f"LOSO-2f rebound {loso2_summary['n_rebound']}/{loso2_summary['n_ok']} folds")
 
     # 8. 构念效度论证（SPEC v2.0 Task 7）
-    print("[8/10] Construct validity report...")
+    print("[8/11] Construct validity report...")
     proxy = proxy_validity_report(valid_df, INDICATORS)
     proxy.to_csv(results_dir / "proxy_validity.csv", index=False, encoding="utf-8")
 
@@ -300,7 +309,7 @@ def run_pipeline(config: dict) -> None:
         f.write(cv_summary)
 
     # 9. 可视化
-    print("[9/10] Generating figures...")
+    print("[9/11] Generating figures...")
     plot_scree_parallel(result, figures_dir / "scree_parallel.png")
     plot_loading_matrix(result, figures_dir / "loading_matrix.png")
     plot_factor_scatter(result, figures_dir / "factor_scatter.png")
@@ -311,7 +320,7 @@ def run_pipeline(config: dict) -> None:
 
     # 10. 严格判据决策报告
     #     v3：correction.enabled 时写修正后决策（阶梯收口 A/C）；否则保持 v2 行为
-    print("[10/10] Writing decision report (strict criteria)...")
+    print("[10/11] Writing decision report (strict criteria)...")
     if ladder is not None:
         report_md = format_final_decision(
             ladder,
@@ -342,6 +351,31 @@ def run_pipeline(config: dict) -> None:
         with open(results_dir / "decision_report.md", "w", encoding="utf-8") as f:
             f.write(report.to_markdown())
         print(f"  Verdict: {report.verdict_label}")
+
+    # 11. CFA 验证性因子分析（L3 证据等级）
+    cfa_cfg = config.get("cfa", {})
+    if cfa_cfg.get("enabled", False):
+        print("[11/11] CFA confirmatory factor analysis (L3)...")
+        cfa_cols = [f"{c}_z" for c in CFA_RETAINED]
+        residual_corr = None
+        rc_cfg = cfa_cfg.get("residual_corr")
+        if rc_cfg:
+            residual_corr = [tuple(pair) for pair in rc_cfg]
+
+        cfa_result = run_cfa(valid_df, indicator_cols=cfa_cols, residual_corr=residual_corr)
+        save_cfa_result(cfa_result, results_dir / "cfa_result.json")
+        print(f"  CFI={cfa_result.cfi:.4f}({'PASS' if cfa_result.cfi_pass else 'FAIL'}) "
+              f"SRMR={cfa_result.srmr:.4f}({'PASS' if cfa_result.srmr_pass else 'FAIL'}) "
+              f"RMSEA={cfa_result.rmsea:.4f}({'PASS' if cfa_result.rmsea_pass else 'FAIL'})")
+
+        subj_cfa = per_subject_cfa(
+            valid_df, subject_col="subject",
+            indicator_cols=cfa_cols, residual_corr=residual_corr,
+        )
+        subj_cfa.to_csv(results_dir / "per_subject_cfa.csv", index=False, encoding="utf-8")
+        n_cfi = int(subj_cfa["cfi_pass"].sum())
+        print(f"  Per-subject CFI pass: {n_cfi}/{len(subj_cfa)}")
+
     print(f"Done. Results at {results_dir}")
 
 

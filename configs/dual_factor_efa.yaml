@@ -60,3 +60,16 @@ efa:
 output:
   results_dir: results/dual_factor_efa
   figures_dir: results/dual_factor_efa/figures
+
+# L3 验证性因子分析（CFA）
+# 因子结构来自 EFA 决策报告：F1 驱动衰减(FD/PSV/SA/FN) + F2 空间失序(SE/GTE)
+cfa:
+  enabled: true
+  # 残差相关：眼动主序列（PSV~~SA），理论 justified 的方法效应控制
+  residual_corr:
+    - ["PSV_z", "SA_z"]
+  # 判据阈值（预注册）
+  cfi_threshold: 0.90       # > 0.90
+  tli_threshold: 0.90       # > 0.90（参考）
+  rmsea_threshold: 0.08     # < 0.08
+  srmr_threshold: 0.08      # < 0.08
