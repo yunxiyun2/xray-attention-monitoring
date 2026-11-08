@@ -67,7 +67,7 @@ class TestBuildModelSpec:
 
     def test_custom_indicators(self):
         cols = ["a", "b", "c", "d", "e", "f"]
-        spec = _build_model_spec(cols)
+        spec = _build_model_spec(cols, indicator_groups={"DriveDecay": cols[:4], "SpatialDisorg": cols[4:]})
         assert "DriveDecay =~ a + b + c + d" in spec
         assert "SpatialDisorg =~ e + f" in spec
 

@@ -37,13 +37,14 @@ class DrozyRecord:
     sampling_rate: float
 
 
-def list_available_tests(drozy_root: str | Path) -> list[tuple[str, str]]:
+def list_available_tests(drozy_root: str | Path, subjects=None, exclude_tests=None) -> list[tuple[str, str]]:
     """枚举 DROZY 中存在的 (subject, test) 对，排除已知缺失测试。"""
     drozy_root = Path(drozy_root)
     tests: list[tuple[str, str]] = []
-    for subj in range(1, 15):
+    excluded = _EXCLUDED_TESTS if exclude_tests is None else {tuple(str(x).split("-")) for x in exclude_tests}
+    for subj in (range(1, 15) if subjects is None else subjects):
         for t in (1, 2, 3):
-            if (str(subj), str(t)) in _EXCLUDED_TESTS:
+            if (str(subj), str(t)) in excluded:
                 continue
             edf = drozy_root / "psg" / f"{subj}-{t}.edf"
             if edf.exists():
@@ -76,13 +77,25 @@ def load_edf_channels(
         n = reader.signals_in_file
         labels = [reader.getLabel(i) for i in range(n)]
         sfs = reader.getSampleFrequencies()
-        fs = float(sfs[0])
+        frequencies = []
         signals: dict[str, np.ndarray] = {}
         for ch_name in wanted:
             idx = _match_channel(labels, ch_name)
             if idx is None:
+                if ch_name == "Cam-Sync":
+                    continue
                 raise KeyError(f"Channel {ch_name} not found in {edf_path}: {labels}")
             signals[ch_name] = reader.readSignal(idx).astype(np.float64)
+            if ch_name in ("EOG-H", "EOG-V"):
+                unit = reader.getPhysicalDimension(idx).strip().replace("µ", "u").replace("μ", "u")
+                scales = {"uV": 1., "mV": 1000., "V": 1000000.}
+                if unit not in scales:
+                    raise ValueError(f"Unsupported EOG physical unit: {unit}")
+                signals[ch_name] *= scales[unit]  # Canonical microvolts, never pixels/degrees.
+            frequencies.append(float(sfs[idx]))
+        if not frequencies or len(set(frequencies)) != 1:
+            raise ValueError("Requested channels have missing or inconsistent sampling rates")
+        fs = frequencies[0]
     return signals, fs, labels
 
 
@@ -94,7 +107,10 @@ def load_kss_matrix(kss_path: str | Path) -> np.ndarray:
         for line in f:
             parts = line.strip().split()
             if len(parts) == 3:
-                rows.append([int(float(x)) for x in parts])
+                values = [float(x) for x in parts]
+                if any(not np.isfinite(x) or x != int(x) for x in values):
+                    raise ValueError("KSS scores must be finite integers")
+                rows.append([int(x) for x in values])
     return np.array(rows, dtype=int)
 
 
@@ -135,13 +151,18 @@ def load_pvt_rt(pvt_path: str | Path) -> np.ndarray:
 def load_all_records(
     drozy_root: str | Path,
     channels: list[str] | None = None,
+    subjects=None,
+    exclude_tests=None,
+    kss_file: str = "KSS.txt",
 ) -> list[DrozyRecord]:
     """加载全部有效 DROZY 记录。"""
     drozy_root = Path(drozy_root)
     if channels is None:
         channels = ["EOG-H", "EOG-V", "Cam-Sync"]
-    kss_matrix = load_kss_matrix(drozy_root / "KSS.txt")
-    tests = list_available_tests(drozy_root)
+    kss_matrix = load_kss_matrix(drozy_root / kss_file)
+    if kss_matrix.shape != (14, 3):
+        raise ValueError("KSS matrix must have shape (14,3)")
+    tests = list_available_tests(drozy_root, subjects, exclude_tests)
     records: list[DrozyRecord] = []
     for subj, test in tests:
         subj_idx = int(subj) - 1
@@ -149,6 +170,8 @@ def load_all_records(
         kss_val = int(kss_matrix[subj_idx, test_idx])
         if kss_val == 0:
             continue
+        if not 1 <= kss_val <= 9:
+            raise ValueError("Invalid KSS value")
         edf_path = drozy_root / "psg" / f"{subj}-{test}.edf"
         if not edf_path.exists():
             continue
@@ -158,6 +181,8 @@ def load_all_records(
         cam_sync = signals.get("Cam-Sync", np.array([]))
         if len(eog_h) == 0 or len(eog_v) == 0:
             continue
+        if len(eog_h) != len(eog_v):
+            raise ValueError("EOG channels differ in length")
         ts = np.arange(len(eog_h)) / fs
         pvt_path = drozy_root / "pvt-rt" / f"{subj}-{test}.csv"
         pvt_rt = load_pvt_rt(pvt_path) if pvt_path.exists() else np.array([])

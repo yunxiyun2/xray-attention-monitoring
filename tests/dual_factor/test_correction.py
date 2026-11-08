@@ -185,7 +185,9 @@ class TestCorrectionLadder:
         ]:
             data[name] = load * f + rng.normal(0, np.sqrt(1 - load ** 2) * 0.6, n)
         df = pd.DataFrame(data)
-        ladder = run_correction_ladder(df, correction_cfg={"enabled": True})
+        # These exact historical rung expectations were produced by SVD/principal,
+        # not by true PAF. Keep the replay method explicit rather than force PAF.
+        ladder = run_correction_ladder(df, correction_cfg={"enabled": True}, extraction="principal")
         assert ladder["final"]["verdict"] == "supported"
         assert ladder["final"]["n_prunes"] == 0
         assert ladder["final"]["criteria"]["all_pass"] is True
@@ -193,7 +195,7 @@ class TestCorrectionLadder:
     def test_noisy_indicators_pruned_exactly(self):
         # SV 交叉噪声 + SDR 无载荷噪声 → 阶梯应剔除这两个并在 6 指标上判定 supported
         df = _synth_two_factor_data(noise_vars=("SV", "SDR"))
-        ladder = run_correction_ladder(df, correction_cfg={"enabled": True})
+        ladder = run_correction_ladder(df, correction_cfg={"enabled": True}, extraction="principal")
         pruned = {p["indicator"] for p in ladder["pruned"]}
         assert pruned == {"SV", "SDR"}
         assert ladder["final"]["verdict"] == "supported"
@@ -211,7 +213,7 @@ class TestCorrectionLadder:
         # 全噪声数据 → 阶梯触底，判定路径 C
         rng = np.random.default_rng(3)
         df = pd.DataFrame(rng.normal(0, 1, (600, 8)), columns=ALL_INDICATORS)
-        ladder = run_correction_ladder(df, correction_cfg={"enabled": True})
+        ladder = run_correction_ladder(df, correction_cfg={"enabled": True}, extraction="principal")
         assert ladder["final"]["verdict"] == "unsupported_structural"
         assert ladder["final"]["n_prunes"] == 3
         assert ladder["stop_reason"]
@@ -220,7 +222,7 @@ class TestCorrectionLadder:
         # max_prunes 压到 0 → rung 0 不通过即止
         rng = np.random.default_rng(3)
         df = pd.DataFrame(rng.normal(0, 1, (600, 8)), columns=ALL_INDICATORS)
-        ladder = run_correction_ladder(df, correction_cfg={"enabled": True, "max_prunes": 0})
+        ladder = run_correction_ladder(df, correction_cfg={"enabled": True, "max_prunes": 0}, extraction="principal")
         assert ladder["final"]["verdict"] == "unsupported_structural"
         assert len(ladder["rungs"]) == 1
 

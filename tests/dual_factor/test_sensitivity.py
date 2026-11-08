@@ -128,5 +128,10 @@ def test_per_subject_efa(synthetic_df_6ind):
 
     # 成功的被试应有非空的方向一致性值
     ok_rows = result[result['status'] == 'ok']
-    assert len(ok_rows) > 0, "至少应有一名被试 EFA 成功"
+    # With only two indicators and finite stochastic samples, true PAF may not
+    # converge. Failed fits must be reported rather than forced into success.
+    assert result["requested_n_factors"].eq(2).all()
+    failed = result[result["status"] != "ok"]
+    assert failed["status"].str.startswith(("error:", "skipped:")).all()
+    assert not failed["fit_success"].any()
     assert ok_rows['direction_consistent'].notna().all()

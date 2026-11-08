@@ -37,10 +37,13 @@ class Events:
 
     fixations: list[Fixation]
     saccades: list[Saccade]
+    velocity_threshold_used: float = float("nan")
 
 
 def compute_velocity(eog_h: np.ndarray, eog_v: np.ndarray, fs: float) -> np.ndarray:
     """一阶差分得到二维 EOG 速度信号。"""
+    if not np.isfinite(fs) or fs <= 0 or len(eog_h) != len(eog_v) or not len(eog_h) or not np.isfinite(eog_h).all() or not np.isfinite(eog_v).all():
+        raise ValueError("Invalid EOG samples or sampling rate")
     dh = np.diff(eog_h, prepend=eog_h[0])
     dv = np.diff(eog_v, prepend=eog_v[0])
     return np.sqrt(dh ** 2 + dv ** 2) * fs
@@ -89,10 +92,14 @@ def detect_events_ivt(
     min_saccade_ms : 最短扫视时长 (ms)
     """
     velocity = compute_velocity(eog_h, eog_v, fs)
+    if not 0 < velocity_percentile < 100 or min_fixation_ms <= 0 or min_saccade_ms <= 0:
+        raise ValueError("Invalid event detection parameters")
     if isinstance(velocity_threshold, str) and velocity_threshold == "auto":
         v_th = _auto_threshold(velocity, velocity_percentile)
     else:
         v_th = float(velocity_threshold)
+    if not np.isfinite(v_th) or v_th < 0:
+        raise ValueError("Velocity threshold must be finite and nonnegative")
 
     is_fixation = velocity < v_th
     fixations_raw = _find_runs(is_fixation, True)
@@ -128,4 +135,4 @@ def detect_events_ivt(
             peak_velocity=peak_v, direction_deg=direction,
             duration_sec=(e - s) / fs,
         ))
-    return Events(fixations=fixations, saccades=saccades)
+    return Events(fixations=fixations, saccades=saccades, velocity_threshold_used=v_th)

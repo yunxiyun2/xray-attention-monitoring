@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from pathlib import Path
 
 import numpy as np
@@ -37,6 +37,7 @@ SRMR_THRESHOLD = 0.08
 def _build_model_spec(
     indicator_cols: list[str],
     residual_corr: list[tuple[str, str]] | None = None,
+    indicator_groups: dict[str, list[str]] | None = None,
 ) -> str:
     """构建 semopy 模型语法。
 
@@ -50,8 +51,20 @@ def _build_model_spec(
     -------
     semopy 模型语法字符串。
     """
-    f1_indicators = " + ".join(indicator_cols[:4])
-    f2_indicators = " + ".join(indicator_cols[4:])
+    if len(indicator_cols) != 6 or len(set(indicator_cols)) != 6:
+        raise ValueError("需要恰好6项唯一指标")
+    if indicator_groups is None:
+        lookup = {c.removesuffix("_z"): c for c in indicator_cols}
+        if set(lookup) != set(RETAINED):
+            raise ValueError("Unknown indicators require explicit named indicator_groups")
+        indicator_groups = {"DriveDecay": [lookup[c] for c in DRIVE_DECAY],
+                            "SpatialDisorg": [lookup[c] for c in SPATIAL_DISORG]}
+    if (set(indicator_groups) != {"DriveDecay", "SpatialDisorg"}
+            or len(indicator_groups["DriveDecay"]) != 4 or len(indicator_groups["SpatialDisorg"]) != 2
+            or sorted(indicator_groups["DriveDecay"] + indicator_groups["SpatialDisorg"]) != sorted(indicator_cols)):
+        raise ValueError("Indicator groups must partition the named six indicators as 4/2")
+    f1_indicators = " + ".join(indicator_groups["DriveDecay"])
+    f2_indicators = " + ".join(indicator_groups["SpatialDisorg"])
     lines = [
         f"DriveDecay =~ {f1_indicators}",
         f"SpatialDisorg =~ {f2_indicators}",
@@ -59,6 +72,8 @@ def _build_model_spec(
     ]
     if residual_corr:
         for a, b in residual_corr:
+            if a not in indicator_cols or b not in indicator_cols or a == b:
+                raise ValueError("Invalid residual covariance pair")
             lines.append(f"{a} ~~ {b}")
     return "\n".join(lines) + "\n"
 
@@ -87,12 +102,17 @@ class CFAResult:
     factor_corr: float
     # 逐指标标准化载荷（主载荷）
     main_loadings: dict[str, float]
+    factor_covariance: float = float("nan")
+    identification_valid: bool = False
+    identification: dict = field(default_factory=dict)
+    model_role: str = "internal_consistency"
 
 
 def run_cfa(
     data: pd.DataFrame,
     indicator_cols: list[str] | None = None,
     residual_corr: list[tuple[str, str]] | None = None,
+    thresholds: dict[str, float] | None = None,
 ) -> CFAResult:
     """对标准化指标数据运行 CFA。
 
@@ -144,7 +164,11 @@ def run_cfa(
     tli = _get_stat("TLI")
     rmsea = _get_stat("RMSEA")
 
-    # SRMR：semopy 不内置，手动计算
+    thresholds = thresholds or {"cfi": CFI_THRESHOLD, "tli": TLI_THRESHOLD,
+                               "rmsea": RMSEA_THRESHOLD, "srmr": SRMR_THRESHOLD}
+    if set(thresholds) != {"cfi", "tli", "rmsea", "srmr"} or any(not 0 < v < 1 for v in thresholds.values()):
+        raise ValueError("Invalid CFA thresholds")
+    # SRMR: standardize sample/model covariance by the SAME sample variances.
     # 模型隐含协方差矩阵（使用模型矩阵，变量顺序与 model.mx_data 一致）
     implied_cov = model.mx_lambda @ model.mx_psi @ model.mx_lambda.T + model.mx_theta
 
@@ -156,11 +180,10 @@ def run_cfa(
         d = np.sqrt(np.diag(cov))
         return cov / np.outer(d, d)
 
-    samp_corr = _corr_from_cov(samp_cov)
-    impl_corr = _corr_from_cov(implied_cov)
-    residual = samp_corr - impl_corr
+    sample_scale = np.sqrt(np.outer(np.diag(samp_cov), np.diag(samp_cov)))
+    residual = (samp_cov - implied_cov) / sample_scale
     n_var = residual.shape[0]
-    lower_idx = np.tril_indices(n_var, k=-1)
+    lower_idx = np.tril_indices(n_var, k=0)
     srmr = float(np.sqrt(np.mean(residual[lower_idx] ** 2)))
 
     # 参数估计
@@ -170,6 +193,9 @@ def run_cfa(
     loadings: dict[str, dict[str, float]] = {"DriveDecay": {}, "SpatialDisorg": {}}
     main_loadings: dict[str, float] = {}
     factor_corr = float("nan")
+    factor_covariance = float("nan")
+    latent_variances = {}
+    observed = list(model.names_lambda[0])
 
     for _, row in params.iterrows():
         if row["op"] == "~":
@@ -177,20 +203,47 @@ def run_cfa(
             indicator = str(row["lval"])
             factor = str(row["rval"])
             val = float(row["Estimate"])
-            # semopy 标准化需要 semopy.standardize，这里取非标准化估计
             loadings[factor][indicator] = val
-            main_loadings[indicator] = val
         elif row["op"] == "~~":
             # 协方差行
-            if str(row["lval"]) == "DriveDecay" and str(row["rval"]) == "SpatialDisorg":
-                factor_corr = float(row["Estimate"])
+            left, right = str(row["lval"]), str(row["rval"])
+            if {left, right} == {"DriveDecay", "SpatialDisorg"}:
+                factor_covariance = float(row["Estimate"])
+            if left == right and left in loadings:
+                latent_variances[left] = float(row["Estimate"])
+
+    if set(latent_variances) == set(loadings) and min(latent_variances.values()) > 0:
+        factor_corr = factor_covariance / np.sqrt(latent_variances["DriveDecay"] * latent_variances["SpatialDisorg"])
+        for factor, indicators in loadings.items():
+            for indicator, estimate in indicators.items():
+                main_loadings[indicator] = estimate * np.sqrt(latent_variances[factor]/implied_cov[observed.index(indicator), observed.index(indicator)])
+    identification = {}
+    try:
+        _, (m, c) = model.calc_sigma()
+        gradients = model.calc_sigma_grad(m, c)
+        jacobian = np.column_stack([(g / sample_scale)[lower_idx] for g in gradients])
+        norms = np.linalg.norm(jacobian, axis=0)
+        normalized = jacobian / np.where(norms > 0, norms, 1.)
+        singular = np.linalg.svd(normalized, compute_uv=False)
+        ratio = float(singular[-1]/singular[0]) if len(singular) and singular[0] > 0 else 0.
+        condition = float(np.linalg.cond(model.calc_fim()))
+        standard_errors = pd.to_numeric(params["Std. Err"], errors="coerce")
+        free_rows = params["Std. Err"].ne("-")
+        valid = (jacobian.shape[0] >= jacobian.shape[1] and ratio >= 1e-8 and condition <= 1e8
+                 and np.isfinite(standard_errors[free_rows]).all()
+                 and len(main_loadings) == 6 and all(abs(v) <= 1+1e-6 for v in main_loadings.values())
+                 and np.linalg.eigvalsh(model.mx_psi).min() > 0 and np.diag(model.mx_theta).min() >= 0)
+        identification = {"jacobian_singular_ratio": ratio, "information_condition": condition,
+                          "valid": bool(valid), "scope": "Numerical identification only; ordinary ML does not correct subject clustering"}
+    except (ValueError, np.linalg.LinAlgError) as error:
+        identification = {"valid": False, "reason": str(error)}
 
     # 判据检查
-    cfi_pass = cfi > CFI_THRESHOLD if not np.isnan(cfi) else False
-    tli_pass = tli > TLI_THRESHOLD if not np.isnan(tli) else False
-    rmsea_pass = rmsea < RMSEA_THRESHOLD if not np.isnan(rmsea) else False
-    srmr_pass = srmr < SRMR_THRESHOLD if not np.isnan(srmr) else False
-    all_pass = cfi_pass and rmsea_pass and srmr_pass
+    cfi_pass = bool(np.isfinite(cfi) and cfi > thresholds["cfi"])
+    tli_pass = bool(np.isfinite(tli) and tli > thresholds["tli"])
+    rmsea_pass = bool(np.isfinite(rmsea) and rmsea < thresholds["rmsea"])
+    srmr_pass = bool(np.isfinite(srmr) and srmr < thresholds["srmr"])
+    all_pass = cfi_pass and rmsea_pass and srmr_pass and identification["valid"]
 
     return CFAResult(
         model_spec=spec,
@@ -210,6 +263,10 @@ def run_cfa(
         loadings=loadings,
         factor_corr=factor_corr,
         main_loadings=main_loadings,
+        factor_covariance=factor_covariance,
+        identification_valid=identification["valid"],
+        identification=identification,
+        model_role="post_hoc_residual_sensitivity" if residual_corr else "internal_consistency",
     )
 
 
@@ -294,4 +351,5 @@ def cfa_to_dict(result: CFAResult) -> dict:
 def save_cfa_result(result: CFAResult, path: str | Path) -> None:
     """保存 CFA 结果为 JSON。"""
     d = cfa_to_dict(result)
-    Path(path).write_text(json.dumps(d, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+    from dual_factor.run_manifest import save_json
+    save_json(path, d)

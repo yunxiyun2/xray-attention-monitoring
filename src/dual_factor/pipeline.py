@@ -27,7 +27,6 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from dual_factor.data.drozy_loader import load_all_records
 from dual_factor.data.preprocess import preprocess_eog
 from dual_factor.features.windowing import build_indicator_matrix, within_subject_zscore
 from dual_factor.analysis.efa import precheck_efa, run_efa, run_efa_compare
@@ -49,20 +48,26 @@ from dual_factor.analysis.plots import (
     plot_scree_parallel, plot_loading_matrix, plot_factor_scatter, plot_direction_check,
 )
 from dual_factor.analysis.decision import make_decision
-from dual_factor.analysis.cfa import (
-    RETAINED as CFA_RETAINED,
-    run_cfa,
-    per_subject_cfa,
-    save_cfa_result,
-)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def run_pipeline(config: dict) -> None:
     """端到端执行 EFA 实验。"""
+    if config.get("protocol_version") == "v5.0":
+        from dual_factor.v5_pipeline import run_experiment
+        return run_experiment(config, PROJECT_ROOT)
+    from dual_factor.data.drozy_loader import load_all_records
+    if config.get("cfa", {}).get("enabled", False):
+        raise ValueError("Legacy automatic CFA is disabled; use a separately accepted EFA report")
     results_dir = Path(config["output"]["results_dir"])
     figures_dir = Path(config["output"]["figures_dir"])
+    if not results_dir.is_absolute():
+        results_dir = PROJECT_ROOT / results_dir
+    if not figures_dir.is_absolute():
+        figures_dir = PROJECT_ROOT / figures_dir
+    if results_dir.exists() and any(p.name != ".gitkeep" for p in results_dir.iterdir()):
+        raise FileExistsError("Historical results cannot be overwritten; choose a new results directory")
     results_dir.mkdir(parents=True, exist_ok=True)
     figures_dir.mkdir(parents=True, exist_ok=True)
 
@@ -234,6 +239,9 @@ def run_pipeline(config: dict) -> None:
         with open(results_dir / "correction_ladder.json", "w", encoding="utf-8") as f:
             json.dump(ladder_json, f, ensure_ascii=False, indent=2)
         for rg in ladder["rungs"]:
+            if rg.get("status") == "failed":
+                print(f"  rung {rg['rung']} failed: {rg['failure_reason']}")
+                continue
             crit = rg["criteria"]
             marks = "".join(
                 "✅" if crit[k]["passed"] else "❌"
@@ -355,6 +363,7 @@ def run_pipeline(config: dict) -> None:
     # 11. CFA 验证性因子分析（L3 证据等级）
     cfa_cfg = config.get("cfa", {})
     if cfa_cfg.get("enabled", False):
+        from dual_factor.analysis.cfa import RETAINED as CFA_RETAINED, run_cfa, per_subject_cfa, save_cfa_result
         print("[11/11] CFA confirmatory factor analysis (L3)...")
         cfa_cols = [f"{c}_z" for c in CFA_RETAINED]
         residual_corr = None
@@ -381,7 +390,7 @@ def run_pipeline(config: dict) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="DROZY 双因子 EFA 一键运行")
-    parser.add_argument("--config", default="configs/dual_factor_efa.yaml")
+    parser.add_argument("--config", default="configs/dual_factor_efa_v5.yaml")
     args = parser.parse_args()
     cfg_path = PROJECT_ROOT / args.config if not Path(args.config).is_absolute() else Path(args.config)
     with open(cfg_path, encoding="utf-8") as f:

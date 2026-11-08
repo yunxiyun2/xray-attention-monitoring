@@ -10,6 +10,7 @@ from factor_analyzer.factor_analyzer import (
     calculate_kmo as _fa_kmo,
     calculate_bartlett_sphericity as _fa_bartlett,
 )
+from dual_factor.analysis.paf import fit_paf
 
 
 # ============ 前置检验 ============
@@ -50,6 +51,9 @@ class EFAResult:
     factor_corr: np.ndarray | None   # (n_factors, n_factors) 或 None
     variable_names: list[str]
     parallel_analysis: dict | None
+    method: str = "legacy"
+    communalities: np.ndarray | None = None
+    structure: np.ndarray | None = None
 
 
 def run_efa(
@@ -72,32 +76,13 @@ def run_efa(
         else:
             break
 
-    # 若无信号，回退到 Kaiser 准则（>1）
-    if n_factors == 0:
-        n_factors = int(np.sum(np.array(actual) > 1.0)) or 1
     n_factors = min(n_factors, max_factors)
-
-    method_map = {"pa": "principal", "ml": "ml", "minres": "minres"}
-    method = method_map.get(extraction, "principal")
-
-    rot_map = {"promax": "promax", "varimax": "varimax", "oblimin": "oblimin"}
-    rot = rot_map.get(rotation, "promax")
-
-    fa = FactorAnalyzer(n_factors=n_factors, rotation=rot, method=method)
-    fa.fit(data)
-    loadings = fa.loadings_
-    variance = fa.get_factor_variance()
-    cum_var = float(variance[2][-1]) if len(variance) >= 3 else 0.0
-    corr = fa.phi_ if hasattr(fa, "phi_") and fa.phi_ is not None else None
-
-    return EFAResult(
-        n_factors=n_factors,
-        loadings=loadings,
-        variance_explained=cum_var,
-        factor_corr=corr,
-        variable_names=list(data.columns),
-        parallel_analysis=pa,
-    )
+    if n_factors == 0:
+        return EFAResult(0, np.empty((data.shape[1], 0)), 0., None,
+                         list(data.columns), pa, extraction)
+    result = run_efa_fixed(data, n_factors, extraction, rotation)
+    result.parallel_analysis = pa
+    return result
 
 
 def run_efa_fixed(
@@ -107,10 +92,19 @@ def run_efa_fixed(
     rotation: str = "promax",
 ) -> EFAResult:
     """提取指定因子数的 EFA（不自动确定因子数，用于 2vs3 对比）。"""
-    method_map = {"pa": "principal", "ml": "ml", "minres": "minres"}
-    method = method_map.get(extraction, "principal")
+    if extraction in ("pa", "paf"):
+        fitted = fit_paf(np.corrcoef(data.to_numpy(float), rowvar=False), n_factors, rotation)
+        return EFAResult(n_factors, fitted.loadings, float(fitted.communalities.mean()),
+                         fitted.phi, list(data.columns), None, "paf",
+                         fitted.communalities, fitted.structure)
+    method_map = {"principal": "principal", "ml": "ml", "minres": "minres"}
+    if extraction not in method_map:
+        raise ValueError(f"Unknown extraction method: {extraction}")
+    method = method_map[extraction]
     rot_map = {"promax": "promax", "varimax": "varimax", "oblimin": "oblimin"}
-    rot = rot_map.get(rotation, "promax")
+    if rotation not in rot_map:
+        raise ValueError(f"Unknown rotation: {rotation}")
+    rot = rot_map[rotation]
 
     fa = FactorAnalyzer(n_factors=n_factors, rotation=rot, method=method)
     fa.fit(data)
@@ -126,6 +120,7 @@ def run_efa_fixed(
         factor_corr=corr,
         variable_names=list(data.columns),
         parallel_analysis=None,
+        method=method,
     )
 
 
@@ -159,8 +154,6 @@ def run_efa_compare(
             pa_n_factors = k + 1
         else:
             break
-    if pa_n_factors == 0:
-        pa_n_factors = int(np.sum(np.array(actual_eigs) > 1.0)) or 1
 
     results = {}
     for nf in n_factors_list:
@@ -224,6 +217,10 @@ def parallel_analysis(
 ) -> dict:
     """平行分析：与随机数据特征值比较。"""
     rng = np.random.default_rng(seed)
+    if n_iter < 1 or not 0 < percentile < 100 or max_factors < 1:
+        raise ValueError("Invalid parallel-analysis settings")
+    if not np.isfinite(data.to_numpy(float)).all() or np.any(data.std(ddof=0).to_numpy() == 0):
+        raise ValueError("Parallel analysis requires finite, nonconstant columns")
     n_obs, n_vars = data.shape
     k = min(max_factors, n_vars)
 

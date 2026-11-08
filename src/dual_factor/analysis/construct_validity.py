@@ -63,7 +63,7 @@ def amplitude_normalization(
             if sd > 0:
                 out.loc[grp.index, norm_col] = vals / sd
             else:
-                out.loc[grp.index, norm_col] = 0.0
+                out.loc[grp.index, norm_col] = np.nan
     return out
 
 
@@ -76,7 +76,8 @@ def direction_correction_report(
 ) -> pd.DataFrame:
     """校正前后方向性检验对比。"""
     before = directionality_test(df_before, indicators, alert_max, drowsy_min)
-    after = directionality_test(df_after, indicators, alert_max, drowsy_min)
+    after = directionality_test(df_after, indicators, alert_max, drowsy_min,
+                               column_map={c: f"{c}_norm" for c in indicators})
 
     merged = before.merge(
         after[["indicator", "diff", "p_value", "direction", "match"]],
@@ -125,7 +126,8 @@ def construct_validity_summary(df: pd.DataFrame, indicators: list[str]) -> str:
 
     lines.append("## 4. 局限性声明\n")
     lines.append("本研究以 EOG 信号代理二维眼动位置，幅度相关指标的方向偏离")
-    lines.append("可能反映代理局限而非假设错误。这不影响因子结构的分析，")
-    lines.append("但在解释幅度敏感指标的因子载荷时需谨慎。\n")
+    lines.append("可能反映代理局限或假设错误，不能由归一化排除。PSV/SA仍幅度依赖。")
+    lines.append("SE/GTE只支持相对分布—转移共变，不支持像素、绝对角度或完整方向随机性。")
+    lines.append("本节窗级U检验仅作历史描述，主效度必须采用被试配对分析。\n")
 
     return "\n".join(lines)

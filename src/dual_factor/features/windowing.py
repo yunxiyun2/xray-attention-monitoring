@@ -28,6 +28,8 @@ def slice_windows(
     """按窗口长度与步长切片。"""
     win = int(window_sec * fs)
     stride = int(stride_sec * fs)
+    if fs <= 0 or win <= 0 or stride <= 0 or len(eog_h) != len(eog_v):
+        raise ValueError("Invalid window parameters or unequal EOG lengths")
     n = len(eog_h)
     windows: list[Window] = []
     for s in range(0, n - win + 1, stride):
@@ -78,6 +80,10 @@ def build_indicator_matrix(
                 **indicators,
             }
         rows.append(row)
+        row.update(start_sec=w.start_idx/fs, end_sec=w.end_idx/fs,
+                   n_fixations=len(events.fixations), n_saccades=len(events.saccades),
+                   grid_bins=bins, velocity_threshold_used=events.velocity_threshold_used,
+                   invalid_reason="" if row["valid"] else "insufficient_events")
     return pd.DataFrame(rows)
 
 
@@ -95,5 +101,7 @@ def within_subject_zscore(
             vals = grp[col].astype(float)
             mu = vals.mean()
             sd = vals.std(ddof=0)
-            out.loc[grp.index, z_col] = (vals - mu) / sd if sd > 0 else 0.0
+            if not np.isfinite(sd) or sd <= 0:
+                raise ValueError(f"degenerate_indicator: subject={subj}, indicator={col}")
+            out.loc[grp.index, z_col] = (vals - mu) / sd
     return out

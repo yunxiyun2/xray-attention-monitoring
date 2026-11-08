@@ -1,0 +1,86 @@
+{
+  "datasets_per_scenario": 200,
+  "bootstrap_iterations": 200,
+  "outcomes": {
+    "null": {
+      "latent_supported": 0,
+      "n": 200,
+      "latent_fraction": 0.0,
+      "latent_wilson_upper": 0.018845326377266575,
+      "observable_signal": 0,
+      "signal_fraction": 0.0,
+      "signal_wilson_upper": 0.018845326377266575
+    },
+    "single": {
+      "latent_supported": 0,
+      "n": 200,
+      "latent_fraction": 0.0,
+      "latent_wilson_upper": 0.018845326377266575,
+      "observable_signal": 0,
+      "signal_fraction": 0.0,
+      "signal_wilson_upper": 0.018845326377266575
+    },
+    "two": {
+      "latent_supported": 0,
+      "n": 200,
+      "latent_fraction": 0.0,
+      "latent_wilson_upper": 0.018845326377266575,
+      "observable_signal": 200,
+      "signal_fraction": 1.0,
+      "signal_wilson_upper": 1.0
+    },
+    "correlated_two": {
+      "latent_supported": 0,
+      "n": 200,
+      "latent_fraction": 0.0,
+      "latent_wilson_upper": 0.018845326377266575,
+      "observable_signal": 0,
+      "signal_fraction": 0.0,
+      "signal_wilson_upper": 0.018845326377266575
+    },
+    "cross_loading": {
+      "latent_supported": 0,
+      "n": 200,
+      "latent_fraction": 0.0,
+      "latent_wilson_upper": 0.018845326377266575,
+      "observable_signal": 200,
+      "signal_fraction": 1.0,
+      "signal_wilson_upper": 1.0
+    },
+    "heterogeneous": {
+      "latent_supported": 0,
+      "n": 200,
+      "latent_fraction": 0.0,
+      "latent_wilson_upper": 0.018845326377266575,
+      "observable_signal": 130,
+      "signal_fraction": 0.65,
+      "signal_wilson_upper": 0.7127117587264192
+    },
+    "two_nonnormal": {
+      "latent_supported": 0,
+      "n": 200,
+      "latent_fraction": 0.0,
+      "latent_wilson_upper": 0.018845326377266575,
+      "observable_signal": 200,
+      "signal_fraction": 1.0,
+      "signal_wilson_upper": 1.0
+    }
+  },
+  "checks": {
+    "null_false_latent_support": true,
+    "single_false_latent_support": true,
+    "null_false_signal": true,
+    "single_false_signal": true,
+    "strong_two_observable_signal_power": true,
+    "high_correlation_latent_rejected": true,
+    "cross_loading_latent_rejected": true,
+    "heterogeneity_latent_rejected": true
+  },
+  "diagnostic_checks_passed": true,
+  "latent_power_validated": false,
+  "passed": false,
+  "code_sha256": "948beaccf0d79914904862d5e72d51f62cc8e8c0631bd8bddecd0dcdc8f1dd37",
+  "config_sha256": "0f26a15da9f8c6b34a226f0a7f53d560e180b6984eb1343070bd7463e8135b90",
+  "scope": "Separately calibrates observable signal detection and unsafe latent acceptance; not raw measurement validation or teacher acceptance",
+  "amendment": "Finite 4/2 latent estimation may be inadmissible despite real covariance signal. Signal detection never grants A or waives PAF/C5."
+}

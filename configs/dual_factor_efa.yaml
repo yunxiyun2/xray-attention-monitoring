@@ -37,7 +37,7 @@ labels:
   exclude_middle: true        # 排除 KSS=5
 
 efa:
-  extraction: pa              # 主轴因子
+  extraction: paf             # 真正迭代主轴因子；旧principal结果为历史对照
   rotation: promax             # 斜交旋转
   max_factors: 4
   variance_threshold: 0.60
@@ -64,7 +64,7 @@ output:
 # L3 验证性因子分析（CFA）
 # 因子结构来自 EFA 决策报告：F1 驱动衰减(FD/PSV/SA/FN) + F2 空间失序(SE/GTE)
 cfa:
-  enabled: true
+  enabled: false              # EFA真实验收前不运行CFA
   # 残差相关：眼动主序列（PSV~~SA），理论 justified 的方法效应控制
   residual_corr:
     - ["PSV_z", "SA_z"]

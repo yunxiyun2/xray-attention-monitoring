@@ -203,7 +203,14 @@ def run_correction_ladder(
 
     for rung_idx in range(cfg["max_prunes"] + 1):
         data = efa_input[active]
-        sol = two_factor_solution(data, extraction=extraction, rotation=rotation)
+        try:
+            sol = two_factor_solution(data, extraction=extraction, rotation=rotation)
+        except (ValueError, np.linalg.LinAlgError) as error:
+            verdict = "not_evaluable"
+            stop_reason = f"数值拟合失败，不能据此判定假设不成立：{error}"
+            rungs.append({"rung": rung_idx, "active_indicators": list(active), "n_indicators": len(active),
+                          "status": "failed", "failure_reason": str(error)})
+            break
         criteria = evaluate_criteria(sol, th)
 
         # 平行分析（context，不作为 A/C 否决项，SPEC §1.6）
@@ -367,6 +374,9 @@ def format_final_decision(
 ) -> str:
     """生成 v3 决策报告 markdown（SPEC §5）。"""
     final = ladder["final"]
+    if final["verdict"] == "not_evaluable":
+        return ("## EFA数值诊断\n\n候选结构未可评估，不进入CFA。\n\n"
+                + ladder["stop_reason"] + "\n")
     rungs = ladder["rungs"]
     pruned = ladder["pruned"]
     active_str = "、".join(final["active_indicators"])

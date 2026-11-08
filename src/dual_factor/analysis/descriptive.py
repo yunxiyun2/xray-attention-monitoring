@@ -16,7 +16,7 @@ HYPOTHESIS_DIRECTIONS = {
     "SE": "increase",
     "GTE": "increase",
     "SV": "increase",
-    "SDR": "increase",
+    "SDR": "decrease",  # KL divergence decreases when directions become more uniform.
 }
 
 
@@ -55,13 +55,17 @@ def directionality_test(
     indicators: list[str],
     alert_max: int = 4,
     drowsy_min: int = 6,
+    column_map: dict[str, str] | None = None,
 ) -> pd.DataFrame:
     """各指标 alert vs drowsy 的方向性检验（Mann-Whitney U）。"""
     alert, drowsy = _split_alert_drowsy(df, alert_max, drowsy_min)
     rows = []
     for ind in indicators:
-        a = alert[ind].dropna().values if ind in alert.columns else np.array([])
-        d = drowsy[ind].dropna().values if ind in drowsy.columns else np.array([])
+        col = (column_map or {}).get(ind, ind)
+        if column_map is not None and col not in df:
+            raise ValueError(f"Mapped indicator column is missing: {col}")
+        a = alert[col].dropna().values if col in alert.columns else np.array([])
+        d = drowsy[col].dropna().values if col in drowsy.columns else np.array([])
         if len(a) == 0 or len(d) == 0:
             rows.append({"indicator": ind, "diff": np.nan, "p_value": np.nan,
                          "direction": "unknown", "expected": HYPOTHESIS_DIRECTIONS.get(ind),

@@ -19,6 +19,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DROZY_ROOT = PROJECT_ROOT / "data_public" / "DROZY"
 
 
+@pytest.mark.skipif(not DROZY_ROOT.exists(), reason="DROZY raw dataset is not available on this node")
 def test_list_available_tests_returns_36():
     """DROZY 应有 36 个有效测试（42 - 6 缺失/无效）。"""
     tests = list_available_tests(DROZY_ROOT)
@@ -44,6 +45,7 @@ def test_load_edf_channels_returns_eog():
     assert len(signals["EOG-V"]) == len(signals["EOG-H"])
 
 
+@pytest.mark.skipif(not (DROZY_ROOT / "KSS.txt").exists(), reason="Raw KSS file is not available on this node")
 def test_load_kss_matrix_shape():
     """KSS 矩阵应为 14×3。"""
     kss = load_kss_matrix(DROZY_ROOT / "KSS.txt")

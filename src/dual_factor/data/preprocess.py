@@ -47,14 +47,23 @@ def hampel_filter(
     threshold : MAD 倍数阈值
     """
     n = len(signal)
+    if window < 1 or window % 2 != 1 or threshold <= 0 or not np.isfinite(signal).all():
+        raise ValueError("Hampel requires finite samples, a positive odd window and positive threshold")
     if n < window:
         return signal.copy()
-    # 向量化：用 scipy.ndimage.median_filter 计算滑动中值
-    med = median_filter(signal, size=window, mode="nearest")
-    abs_dev = np.abs(signal - med)
-    mad = 1.4826 * median_filter(abs_dev, size=window, mode="nearest")
+    # Exact local MAD: all deviations in a window use that SAME window's median.
+    # Chunked views avoid allocating a full EDF-length N x window temporary.
+    neighborhoods = np.lib.stride_tricks.sliding_window_view(
+        np.pad(np.asarray(signal, dtype=float), window//2, mode="edge"), window)
+    med, mad = np.empty(n), np.empty(n)
+    for start in range(0, n, 4096):
+        block = neighborhoods[start:start+4096]
+        center = np.median(block, axis=1)
+        med[start:start+len(block)] = center
+        mad[start:start+len(block)] = 1.4826*np.median(np.abs(block-center[:, None]), axis=1)
     out = signal.copy()
-    mask = (mad > 0) & (abs_dev > threshold * mad)
+    # Zero-MAD plateaus with an isolated deviation are outliers too.
+    mask = np.abs(signal-med) > threshold * mad
     out[mask] = med[mask]
     return out
 

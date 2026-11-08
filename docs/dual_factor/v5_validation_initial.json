@@ -1,0 +1,60 @@
+{
+  "datasets_per_scenario": 200,
+  "bootstrap_iterations": 200,
+  "outcomes": {
+    "null": {
+      "supported": 0,
+      "n": 200,
+      "fraction": 0.0,
+      "wilson_upper": 0.018845326377266575
+    },
+    "single": {
+      "supported": 0,
+      "n": 200,
+      "fraction": 0.0,
+      "wilson_upper": 0.018845326377266575
+    },
+    "two": {
+      "supported": 0,
+      "n": 200,
+      "fraction": 0.0,
+      "wilson_upper": 0.018845326377266575
+    },
+    "correlated_two": {
+      "supported": 0,
+      "n": 200,
+      "fraction": 0.0,
+      "wilson_upper": 0.018845326377266575
+    },
+    "cross_loading": {
+      "supported": 0,
+      "n": 200,
+      "fraction": 0.0,
+      "wilson_upper": 0.018845326377266575
+    },
+    "heterogeneous": {
+      "supported": 0,
+      "n": 200,
+      "fraction": 0.0,
+      "wilson_upper": 0.018845326377266575
+    },
+    "two_nonnormal": {
+      "supported": 0,
+      "n": 200,
+      "fraction": 0.0,
+      "wilson_upper": 0.018845326377266575
+    }
+  },
+  "checks": {
+    "null_false_support": true,
+    "single_false_support": true,
+    "strong_two_power": false,
+    "high_correlation_rejected": true,
+    "cross_loading_rejected": true,
+    "heterogeneity_rejected": true
+  },
+  "passed": false,
+  "code_sha256": "019986837b79b57efc3b796898ed3311432db42156e11ef67ea070a38f20ba15",
+  "config_sha256": "468c130fd5fc4faef488fb9c6cc91dbbea111a65f2db5ee966305606bbaec133",
+  "scope": "Statistical core calibration, not raw EOG measurement validation or teacher acceptance"
+}

@@ -1,0 +1,57 @@
+protocol_version: v5.0
+input:
+  mode: matrix
+  path: results/dual_factor_efa/indicator_matrix.csv
+  source_config: results/dual_factor_efa/config_used.yaml
+windowing:
+  window_sec: 30.0
+  stride_sec: 10.0
+  primary_phase: 0
+  sensitivity_phases: [1, 2]
+  min_fixations: 5
+  min_saccades: 3
+structure:
+  retained: [FD, PSV, SA, FN, SE, GTE]
+  extraction: paf
+  rotation: promax
+  paf_tol: 0.000001
+  paf_max_iter: 500
+  weighting: equal_subject_equal_record
+  criteria:
+    variance_min: 0.60
+    loading_min: 0.50
+    cross_max: 0.30
+    correlation_max: 0.70
+  stability:
+    valid_fraction: 0.95
+    assignment_probability: 0.80
+    congruence_min: 0.90
+    joint_fraction: 0.80
+parallel_analysis:
+  iterations: 1000
+  percentile: 95.0
+  seed: 2026110801
+  min_segment: 8
+  min_subjects: 10
+cluster_bootstrap: {iterations: 2000, seed: 2026110802}
+signal_detection: {iterations: 2000, seed: 2026110806, coherence_min: 0.5, eigen_floor: 1.0}
+validity: {alert_max: 4, drowsy_min: 6, iterations: 2000, seed: 2026110803}
+preprocess:
+  highpass: 0.5
+  lowpass: 30.0
+  filter_order: 4
+  hampel_window: 51
+  hampel_threshold: 3.0
+event_detection:
+  velocity_threshold: auto
+  velocity_percentile: 70.0
+  min_fixation_ms: 100.0
+  min_saccade_ms: 20.0
+spatial_grid: {bins: 5}
+data:
+  subjects: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+  exclude_tests: [7-1]
+  channels: [EOG-H, EOG-V]
+  kss_file: KSS.txt
+stages: {efa: true, cfa: false, prediction: false, external: false, invariance: false}
+output: {root: results/dual_factor_efa_v5, overwrite: false}

@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from dual_factor.analysis.efa import run_efa, run_efa_fixed, precheck_efa
+from dual_factor.analysis.sampling import select_nonoverlap
 
 
 def aggregate_subject_level(
@@ -36,6 +37,11 @@ def subject_level_efa(
     """在 14 行被试级聚合数据上做 EFA。"""
     agg = aggregate_subject_level(df, subject_col, indicator_cols, suffix)
     data = agg.drop(columns=[subject_col]).dropna()
+
+    if len(data) and np.all(np.abs(data.to_numpy(float)) < 1e-10):
+        return {"status": "degenerate_input", "n_subjects": len(data),
+                "message": "全程被试内z-score均值接近零，不能用于被试级EFA",
+                "efa_result": None}
 
     if data.shape[0] < len(indicator_cols):
         return {
@@ -167,20 +173,10 @@ def nonoverlap_efa(
     if not available:
         raise ValueError(f"指标列 {indicator_cols} 在 DataFrame 中不存在")
 
-    valid = df[df["valid"]] if "valid" in df.columns else df
-    # 每隔 N 个窗口取 1 个，使窗口不重叠
-    step = int(window_sec / stride_sec)  # e.g. 30/10 = 3 → 每 3 个取 1 个
-    if step < 1:
-        step = 1
-    # 按 subject 分组，每组取非重叠子集
-    parts = []
-    for subj, grp in valid.groupby(subject_col):
-        grp_sorted = grp.sort_values(window_col)
-        non_overlap = grp_sorted.iloc[::step]
-        parts.append(non_overlap)
-    if not parts:
+    source = df.rename(columns={subject_col: "subject", window_col: "window_idx"})
+    subset = select_nonoverlap(source, window_sec, stride_sec)
+    if subset.empty:
         return {"status": "no_data", "efa_result": None}
-    subset = pd.concat(parts, ignore_index=True)
     data = subset[available].dropna()
 
     if data.shape[0] < len(indicator_cols):
@@ -250,7 +246,7 @@ def sensitivity_summary(
         loso_factors_mode = None
 
     factor_counts = [f for f in [window_factors, subject_factors, nonoverlap_factors, loso_factors_mode] if f is not None]
-    consistent = len(set(factor_counts)) <= 1 if factor_counts else False
+    consistent = len(factor_counts) == 4 and len(set(factor_counts)) == 1
 
     return {
         "window_level_n_factors": window_factors,
@@ -311,6 +307,10 @@ def per_subject_efa(
             "factor_corr": None,
             "variance_explained": None,
             "status": "",
+            "requested_n_factors": n_factors,
+            "assignment_match": None,
+            "hypothesis_sign_match": None,
+            "fit_success": False,
         }
 
         # 窗口数不足，记录跳过原因
@@ -355,6 +355,8 @@ def per_subject_efa(
             row.update({
                 "n_factors": result.n_factors,
                 "direction_consistent": bool(direction_ok),
+                "assignment_match": bool(direction_ok),
+                "fit_success": True,
                 "cross_loading_max": cross_max,
                 "factor_corr": corr_val,
                 "variance_explained": result.variance_explained,

@@ -83,7 +83,7 @@ def spatial_entropy(fixations: list[Fixation], bins: int = 5) -> float:
 
 
 def gaze_transition_entropy(fixations: list[Fixation], bins: int = 5) -> float:
-    """GTE: 注视点在网格区域间转移模式的信息熵。"""
+    """GTE: 相邻网格对的联合熵H(current,next)，不是条件熵或transfer entropy。"""
     positions = _fixation_positions(fixations)
     if len(positions) < 2:
         return float("nan")
@@ -98,7 +98,7 @@ def gaze_transition_entropy(fixations: list[Fixation], bins: int = 5) -> float:
 
 
 def spatial_variance(fixations: list[Fixation]) -> float:
-    """SV: 注视点坐标的 trace 协方差（简化为马氏距离方差）。"""
+    """SV: 注视点二维协方差的trace，不是马氏距离方差。"""
     positions = _fixation_positions(fixations)
     if len(positions) < 2:
         return float("nan")
