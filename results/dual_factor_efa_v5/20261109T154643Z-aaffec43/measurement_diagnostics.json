@@ -1,0 +1,11 @@
+{
+  "feature_validation": "not_run",
+  "FD_FN_correlation": -0.14854941798178348,
+  "PSV_SA_correlation": 0.6716633676957336,
+  "SE_GTE_correlation": 0.9186100937784616,
+  "GTE_definition": "joint_entropy_of_adjacent_grid_pairs",
+  "SDR_definition": "KL_to_uniform_smaller_is_more_random",
+  "raw_parameter_sensitivity": "not_run",
+  "event_count_entropy_control": "not_run",
+  "scope": "Proxy covariance does not establish a fatigue mechanism"
+}

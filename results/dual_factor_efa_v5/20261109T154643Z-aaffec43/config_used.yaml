@@ -1,0 +1,100 @@
+cluster_bootstrap:
+  iterations: 2000
+  seed: 2026110802
+data:
+  channels:
+  - EOG-H
+  - EOG-V
+  exclude_tests:
+  - 7-1
+  kss_file: KSS.txt
+  subjects:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+event_detection:
+  min_fixation_ms: 100.0
+  min_saccade_ms: 20.0
+  velocity_percentile: 70.0
+  velocity_threshold: auto
+input:
+  mode: matrix
+  path: results/dual_factor_efa/indicator_matrix.csv
+  source_config: results/dual_factor_efa/config_used.yaml
+output:
+  overwrite: false
+  root: results/dual_factor_efa_v5
+parallel_analysis:
+  iterations: 1000
+  min_segment: 8
+  min_subjects: 10
+  percentile: 95.0
+  seed: 2026110801
+preprocess:
+  filter_order: 4
+  hampel_threshold: 3.0
+  hampel_window: 51
+  highpass: 0.5
+  lowpass: 30.0
+protocol_version: v5.0
+signal_detection:
+  coherence_min: 0.5
+  eigen_floor: 1.0
+  iterations: 2000
+  seed: 2026110806
+spatial_grid:
+  bins: 5
+stages:
+  cfa: false
+  efa: true
+  external: false
+  invariance: false
+  prediction: false
+structure:
+  criteria:
+    correlation_max: 0.7
+    cross_max: 0.3
+    loading_min: 0.5
+    variance_min: 0.6
+  extraction: paf
+  paf_max_iter: 500
+  paf_tol: 1.0e-06
+  retained:
+  - FD
+  - PSV
+  - SA
+  - FN
+  - SE
+  - GTE
+  rotation: promax
+  stability:
+    assignment_probability: 0.8
+    congruence_min: 0.9
+    joint_fraction: 0.8
+    valid_fraction: 0.95
+  weighting: equal_subject_equal_record
+validity:
+  alert_max: 4
+  drowsy_min: 6
+  iterations: 2000
+  seed: 2026110803
+windowing:
+  min_fixations: 5
+  min_saccades: 3
+  primary_phase: 0
+  sensitivity_phases:
+  - 1
+  - 2
+  stride_sec: 10.0
+  window_sec: 30.0

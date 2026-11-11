@@ -1,0 +1,132 @@
+{
+  "run_id": "20261109T154643Z-aaffec43",
+  "scientific_decision": "B",
+  "evidence_level": "L0",
+  "teacher_accepted": false,
+  "data": {
+    "n_generated": 2088,
+    "n_valid": 2044,
+    "n_complete": 2044,
+    "n_subjects": 14,
+    "n_records": 36,
+    "invalid_window_rate": 0.0210727969348659,
+    "missing_rate_by_indicator": {
+      "FD": 0.0210727969348659,
+      "PSV": 0.0210727969348659,
+      "SA": 0.0210727969348659,
+      "FN": 0.0210727969348659,
+      "SE": 0.0210727969348659,
+      "GTE": 0.0210727969348659,
+      "SV": 0.0210727969348659,
+      "SDR": 0.0210727969348659
+    },
+    "time_source": "reconstructed_from_source_config",
+    "feature_validation": "not_run",
+    "n_valid_nonfinite": 0,
+    "input_sha256": "e20c60040c6ceb7dfa72b8a1567c430cbaedb0d01adac15fa1ee8a27390d4138",
+    "source_config_sha256": "862a1377cc40ae7d137779478250715f128448b3d71d3f28fbacef455efbc9bc",
+    "n_source_generated": 2088
+  },
+  "n_pairs": 10,
+  "C5_pass": false,
+  "phase_pass": false,
+  "dimensions_ok": true,
+  "observable_signal_detected": false,
+  "latent_power_validated": false,
+  "method_correction_required": true,
+  "measurement_validation": "not_run",
+  "groups": {
+    "f1": [
+      "FD",
+      "PSV",
+      "SA",
+      "FN"
+    ],
+    "f2": [
+      "SE",
+      "GTE"
+    ]
+  },
+  "hypothesis_validity": [
+    {
+      "indicator": "FD",
+      "n_pairs": 10,
+      "mean_delta_standardized": 0.4383469315058669,
+      "ci_low": -0.06046568214270434,
+      "ci_high": 0.9144707777240101,
+      "p_value": 0.12890625,
+      "p_holm": 0.7734375,
+      "expected_sign": 1,
+      "conclusion": "inconclusive"
+    },
+    {
+      "indicator": "PSV",
+      "n_pairs": 10,
+      "mean_delta_standardized": -0.46812871836130004,
+      "ci_low": -1.0642028521821847,
+      "ci_high": 0.11995687659427531,
+      "p_value": 0.173828125,
+      "p_holm": 0.869140625,
+      "expected_sign": -1,
+      "conclusion": "inconclusive"
+    },
+    {
+      "indicator": "SA",
+      "n_pairs": 10,
+      "mean_delta_standardized": -0.07758617500187096,
+      "ci_low": -0.7226431007327652,
+      "ci_high": 0.5283892218036124,
+      "p_value": 0.8203125,
+      "p_holm": 1.0,
+      "expected_sign": -1,
+      "conclusion": "inconclusive"
+    },
+    {
+      "indicator": "FN",
+      "n_pairs": 10,
+      "mean_delta_standardized": 0.15410236936313138,
+      "ci_low": -0.31126166276059775,
+      "ci_high": 0.6163516350446792,
+      "p_value": 0.53125,
+      "p_holm": 1.0,
+      "expected_sign": -1,
+      "conclusion": "inconclusive"
+    },
+    {
+      "indicator": "SE",
+      "n_pairs": 10,
+      "mean_delta_standardized": -0.23539691998207646,
+      "ci_low": -0.6401085117561196,
+      "ci_high": 0.1608625878515071,
+      "p_value": 0.29296875,
+      "p_holm": 1.0,
+      "expected_sign": 1,
+      "conclusion": "inconclusive"
+    },
+    {
+      "indicator": "GTE",
+      "n_pairs": 10,
+      "mean_delta_standardized": -0.243195772801624,
+      "ci_low": -0.6123274491178822,
+      "ci_high": 0.13541855072012576,
+      "p_value": 0.25390625,
+      "p_holm": 1.0,
+      "expected_sign": 1,
+      "conclusion": "inconclusive"
+    }
+  ],
+  "limitations": [
+    "历史六指标的条件性复验",
+    "14人规模下的区间可能很宽",
+    "EOG代理及原始事件效度尚未独立验证",
+    "无CFA、预测或跨域结果"
+  ],
+  "source_files": [
+    "data_audit.json",
+    "cluster_summary.json",
+    "validity_tests.csv",
+    "efa_models.json",
+    "parallel_analysis.json",
+    "observable_covariance_signal.json"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "status": "ok",
+  "n_pairs": 10,
+  "excluded": [
+    {
+      "subject": "12",
+      "reason": "missing_alert_or_drowsy"
+    },
+    {
+      "subject": "14",
+      "reason": "missing_alert_or_drowsy"
+    },
+    {
+      "subject": "3",
+      "reason": "missing_alert_or_drowsy"
+    },
+    {
+      "subject": "9",
+      "reason": "missing_alert_or_drowsy"
+    }
+  ],
+  "assumption": "Sign-flip inference assumes symmetric exchangeable within-person differences; not causal randomization"
+}
