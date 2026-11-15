@@ -53,14 +53,16 @@ def criterion_values(loadings, phi, communalities, thresholds=None):
 
 
 def bootstrap_structure(df, columns=None, iterations=2000, seed=2026110802,
-                        thresholds=None, stability=None, tol=1e-6, max_iter=500):
-    columns = list(columns or RETAINED)
-    if set(columns) != set(RETAINED) or iterations < 1:
-        raise ValueError("Bootstrap requires all six retained indicators and positive iterations")
+                        thresholds=None, stability=None, tol=1e-6, max_iter=500,
+                        retained=None):
+    retained = tuple(retained) if retained else RETAINED
+    columns = list(columns or retained)
+    if set(columns) != set(retained) or iterations < 1:
+        raise ValueError("Bootstrap requires all retained indicators and positive iterations")
     r, person_matrices, identities = structural_correlation(df, columns)
     reference = fit_paf(r, 2, tol=tol, max_iter=max_iter)
     reference_loading, reference_phi = anchor_fit(reference, columns)
-    expected = np.array([0 if c in RETAINED[:4] else 1 for c in columns])
+    expected = np.array([0 if c in retained[:4] else 1 for c in columns])
     thresholds = CRITERIA | (thresholds or {})
     stability = STABILITY | (stability or {})
     random = np.random.default_rng(seed)
@@ -86,7 +88,7 @@ def bootstrap_structure(df, columns=None, iterations=2000, seed=2026110802,
     summary = {"iterations": iterations, "n_subjects": len(identities), "n_valid": len(successful),
                "valid_fraction": len(successful)/iterations,
                "joint_fraction": sum(x["joint_pass"] for x in rows)/iterations,
-               "candidate_selection": "conditional_on_historical_six_indicator_set",
+               "candidate_selection": "conditional_on_retained_indicator_set",
                "ci_scope": "percentile_intervals_condition_on_numerically_valid_replicates",
                "reference_loadings": reference_loading.tolist(), "reference_phi": reference_phi.tolist(),
                "reference_criteria": criterion_values(reference_loading, reference_phi, reference.communalities, thresholds)}
@@ -116,9 +118,10 @@ def bootstrap_structure(df, columns=None, iterations=2000, seed=2026110802,
     return pd.DataFrame(rows), summary
 
 
-def bootstrap_single_factor(df, columns=None, iterations=2000, seed=2026110805, thresholds=None, tol=1e-6, max_iter=500):
+def bootstrap_single_factor(df, columns=None, iterations=2000, seed=2026110805, thresholds=None, tol=1e-6, max_iter=500, retained=None):
     """Evidence for a clear one-factor alternative, not a fallback for failed PAF."""
-    columns = list(columns or RETAINED)
+    retained = tuple(retained) if retained else RETAINED
+    columns = list(columns or retained)
     thresholds = CRITERIA | (thresholds or {})
     r, matrices, identities = structural_correlation(df, columns)
     reference = fit_paf(r, 1, tol=tol, max_iter=max_iter)

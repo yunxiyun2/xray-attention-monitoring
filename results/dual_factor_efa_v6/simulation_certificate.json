@@ -1,0 +1,86 @@
+{
+  "datasets_per_scenario": 200,
+  "bootstrap_iterations": 200,
+  "outcomes": {
+    "null": {
+      "latent_supported": 0,
+      "n": 200,
+      "latent_fraction": 0.0,
+      "latent_wilson_upper": 0.018845326377266575,
+      "observable_signal": 0,
+      "signal_fraction": 0.0,
+      "signal_wilson_upper": 0.018845326377266575
+    },
+    "single": {
+      "latent_supported": 0,
+      "n": 200,
+      "latent_fraction": 0.0,
+      "latent_wilson_upper": 0.018845326377266575,
+      "observable_signal": 0,
+      "signal_fraction": 0.0,
+      "signal_wilson_upper": 0.018845326377266575
+    },
+    "two_4_3": {
+      "latent_supported": 200,
+      "n": 200,
+      "latent_fraction": 1.0,
+      "latent_wilson_upper": 1.0,
+      "observable_signal": 200,
+      "signal_fraction": 1.0,
+      "signal_wilson_upper": 1.0
+    },
+    "correlated_two": {
+      "latent_supported": 0,
+      "n": 200,
+      "latent_fraction": 0.0,
+      "latent_wilson_upper": 0.018845326377266575,
+      "observable_signal": 0,
+      "signal_fraction": 0.0,
+      "signal_wilson_upper": 0.018845326377266575
+    },
+    "cross_loading": {
+      "latent_supported": 0,
+      "n": 200,
+      "latent_fraction": 0.0,
+      "latent_wilson_upper": 0.018845326377266575,
+      "observable_signal": 200,
+      "signal_fraction": 1.0,
+      "signal_wilson_upper": 1.0
+    },
+    "heterogeneous": {
+      "latent_supported": 0,
+      "n": 200,
+      "latent_fraction": 0.0,
+      "latent_wilson_upper": 0.018845326377266575,
+      "observable_signal": 139,
+      "signal_fraction": 0.695,
+      "signal_wilson_upper": 0.7546358436926496
+    },
+    "two_nonnormal": {
+      "latent_supported": 200,
+      "n": 200,
+      "latent_fraction": 1.0,
+      "latent_wilson_upper": 1.0,
+      "observable_signal": 200,
+      "signal_fraction": 1.0,
+      "signal_wilson_upper": 1.0
+    }
+  },
+  "checks": {
+    "null_false_latent_support": true,
+    "single_false_latent_support": true,
+    "null_false_signal": true,
+    "single_false_signal": true,
+    "strong_two_observable_signal_power": true,
+    "high_correlation_latent_rejected": true,
+    "cross_loading_latent_rejected": true,
+    "heterogeneity_latent_rejected": true
+  },
+  "diagnostic_checks_passed": true,
+  "latent_power_validated": true,
+  "passed": true,
+  "code_sha256": "792d7bf3cf38c9f080f7e982466a63f10871a34460ecb5327e5c72ac9532f1fc",
+  "config_sha256": "7e0219b73856ab58cad53d4216880a568f89fa113e79ffbb09dbc5cada63aa7f",
+  "scope": "v6 4/3 structure: SV in F2 with negative loading. Separately calibrates observable signal detection and unsafe latent acceptance.",
+  "amendment": "v6 fixes v5 F2 under-identification (2 indicators) by adding SV (3 indicators). SV negative loading reflects real data correlation pattern."
+}

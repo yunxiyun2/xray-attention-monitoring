@@ -1,0 +1,29 @@
+{
+  "observable_signal_detected": false,
+  "n_subjects": 14,
+  "iterations": 2000,
+  "statistics": {
+    "within_f1_abs_correlation": 0.30285607292786015,
+    "within_f2_abs_correlation": 0.8992811015079912,
+    "second_correlation_eigenvalue": 1.8085799128014313
+  },
+  "simultaneous_descriptive_ci": [
+    [
+      0.1998023083050069,
+      0.4434279994560101
+    ],
+    [
+      0.849849989151239,
+      0.9421656928690314
+    ],
+    [
+      1.4135570356748686,
+      1.9419070521125386
+    ]
+  ],
+  "eigen_floor": 1.0,
+  "coherence_min": 0.5,
+  "scope": "Observable covariance groups only; eigen_floor is descriptive, not a cluster-corrected PA p-value",
+  "latent_acceptance": false,
+  "can_unlock_cfa": false
+}

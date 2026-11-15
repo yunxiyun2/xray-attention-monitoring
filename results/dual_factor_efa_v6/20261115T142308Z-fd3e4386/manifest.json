@@ -1,0 +1,21 @@
+{
+  "protocol_version": "v6.0",
+  "config_sha256": "7e0219b73856ab58cad53d4216880a568f89fa113e79ffbb09dbc5cada63aa7f",
+  "code_sha256": "792d7bf3cf38c9f080f7e982466a63f10871a34460ecb5327e5c72ac9532f1fc",
+  "python": "3.11.14 (main, Oct 21 2025, 18:31:21) [GCC 11.2.0]",
+  "platform": "Linux-5.15.0-70-generic-x86_64-with-glibc2.31",
+  "numpy": "1.26.4",
+  "pandas": "2.1.4",
+  "diagnostic_only": false,
+  "implementation_validated": true,
+  "latent_power_validated": true,
+  "validation_scope": "observable-signal and negative controls; latent acceptance has its own power gate",
+  "stages": {
+    "efa": "executed",
+    "cfa": "not_run",
+    "prediction": "not_run",
+    "external": "not_run",
+    "invariance": "not_run"
+  },
+  "report_sha256": "9962279564b3fb0fd1618b4fd5de3a02d03e9dfff4da88246f8bc38f114e7f32"
+}

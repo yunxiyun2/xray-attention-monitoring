@@ -1,0 +1,24 @@
+{
+  "n_generated": 2088,
+  "n_valid": 2044,
+  "n_complete": 2044,
+  "n_subjects": 14,
+  "n_records": 36,
+  "invalid_window_rate": 0.0210727969348659,
+  "missing_rate_by_indicator": {
+    "FD": 0.0210727969348659,
+    "PSV": 0.0210727969348659,
+    "SA": 0.0210727969348659,
+    "FN": 0.0210727969348659,
+    "SE": 0.0210727969348659,
+    "GTE": 0.0210727969348659,
+    "SV": 0.0210727969348659,
+    "SDR": 0.0210727969348659
+  },
+  "time_source": "reconstructed_from_source_config",
+  "feature_validation": "not_run",
+  "n_valid_nonfinite": 0,
+  "input_sha256": "e20c60040c6ceb7dfa72b8a1567c430cbaedb0d01adac15fa1ee8a27390d4138",
+  "source_config_sha256": "862a1377cc40ae7d137779478250715f128448b3d71d3f28fbacef455efbc9bc",
+  "n_source_generated": 2088
+}
