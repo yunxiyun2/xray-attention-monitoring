@@ -1,0 +1,23 @@
+protocol: v7.0
+input:
+  path: results/dual_factor_efa/indicator_matrix.csv
+analysis:
+  window_sec: 30.0
+  stride_sec: 10.0
+  primary_phase: 0
+  alert_max: 4
+  drowsy_min: 6
+  min_pairs: 8
+  min_state_windows: 10
+  delta_auc_min: 0.05
+model:
+  type: logistic
+  regularization_c: 0.1
+  max_iter: 2000
+  seed: 2026112101
+bootstrap:
+  iterations: 2000
+  seed: 2026112102
+output:
+  root: results/dual_factor_predictive_v7
+  overwrite: false

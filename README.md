@@ -1,10 +1,20 @@
 # X-ray Attention Monitoring
 
-## Current research: v5 fatigue gaze-factor protocol
+## Current research: v7 incremental predictive validity
 
-The active entry point is `scripts/run_efa_v5.py`. The six historical candidate
-indicators form a 4/2 grouping: FD/PSV/SA/FN and SE/GTE. The second component is
-limited to distribution/transition covariation, not complete direction randomness.
+The newest entry point is `scripts/run_predictive_v7.py`. After the v6 EFA
+returned Decision B, this experiment tests whether the predefined driver-decay
+and distribution-transition scores add predictive value relative to a single
+fatigue score. It does not reopen the latent-factor decision.
+
+```bash
+.venv/bin/python scripts/run_predictive_v7.py --dry-run
+.venv/bin/python scripts/run_predictive_v7.py --config configs/dual_factor_predictive_v7.yaml
+```
+
+The v5 fatigue gaze-factor protocol remains the historical EFA entry point. The six
+candidate indicators form a 4/2 grouping: FD/PSV/SA/FN and SE/GTE. The second component
+is limited to distribution/transition covariation, not complete direction randomness.
 The X-ray classification experiments below are archived research history.
 
 CPU setup (no GPU or deep-learning dependencies required):

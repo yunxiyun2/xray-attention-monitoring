@@ -1,0 +1,10 @@
+{
+  "run_id": "20261115T142308Z-fd3e4386",
+  "source_sha256": {
+    "results/dual_factor_efa_v6/20261115T142308Z-fd3e4386/efa_models.json": "86c3d8d04ae0ecba1de590659e87599c896b5937dfe6bcbc5fe1f35a6aa4dd08",
+    "results/dual_factor_efa_v6/20261115T142308Z-fd3e4386/parallel_analysis.json": "596c3ae817e8d2c437991584e890cfe2f4cb4ab1426a81b7a57b5ebed4e4528a",
+    "results/dual_factor_efa_v6/20261115T142308Z-fd3e4386/facts.json": "d49b13016d4e95451f418c1c2a8b382b004bf946798bf156597739fed0b74ed9",
+    "results/dual_factor_efa_v6/simulation_certificate.json": "1083e1cf0ed6183dd2f90b8ed772cce90453de17ca82675b6d5277a8338db239"
+  },
+  "note": "Visualization only. No training, simulation or raw feature extraction rerun."
+}
