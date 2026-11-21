@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from eog_si_mset.config import config_hash, validate_config
+from eog_si_mset.config import config_hash, load_config, validate_config
 from eog_si_mset.data import (
     _resample_pair,
     _robust_normalize,
@@ -109,6 +109,15 @@ def test_config_hash_and_invalid_overwrite(tmp_path):
     raw["output"]["overwrite"] = True
     with pytest.raises(ValueError, match="overwrite"):
         validate_config(raw)
+
+
+def test_long_run_config_is_valid():
+    project_root = Path(__file__).resolve().parents[2]
+    config = load_config(project_root / "configs/eog_si_mset_v1_1.yaml")
+    assert config["protocol"] == "si-mset-v1.1"
+    assert config["training"]["validation_mode"] == "training_subjects"
+    assert config["training"]["epochs"] == 130
+    assert config["model"]["transformer_layers"] == 5
 
 
 def test_paired_subjects_and_loso_are_disjoint():

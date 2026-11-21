@@ -6,15 +6,15 @@ from pathlib import Path
 
 import yaml
 
-from eog_si_mset.protocol import PROTOCOL, VARIANTS
+from eog_si_mset.protocol import SUPPORTED_PROTOCOLS, VARIANTS
 
 
 def validate_config(raw):
     if not isinstance(raw, dict):
         raise ValueError("Configuration must be a mapping")
     config = deepcopy(raw)
-    if config.get("protocol") != PROTOCOL:
-        raise ValueError(f"Only {PROTOCOL} is supported")
+    if config.get("protocol") not in SUPPORTED_PROTOCOLS:
+        raise ValueError(f"Unsupported protocol: {config.get('protocol')}")
     for section in ("data", "model", "training", "evaluation", "output"):
         if section not in config or not isinstance(config[section], dict):
             raise ValueError(f"Missing configuration section: {section}")
@@ -95,6 +95,12 @@ def validate_config(raw):
         raise ValueError("adversarial_warmup_epochs must be positive")
     if not isinstance(training.get("amp"), bool):
         raise ValueError("amp must be boolean")
+    validation_mode = training.get("validation_mode", "rotating_subject")
+    if validation_mode not in ("rotating_subject", "training_subjects"):
+        raise ValueError("Invalid validation_mode")
+    if validation_mode == "training_subjects":
+        if not isinstance(training.get("validation_windows_per_subject"), int) or training["validation_windows_per_subject"] < 1:
+            raise ValueError("validation_windows_per_subject must be a positive integer")
 
     evaluation = config["evaluation"]
     for key in ("bootstrap_iterations", "seed"):

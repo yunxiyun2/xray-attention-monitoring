@@ -130,6 +130,30 @@ def balanced_subject_indices(metadata, subject, windows_per_state, rng):
     }
 
 
+def multi_subject_validation_indices(metadata, subjects, windows_per_subject, rng):
+    indices, binary, kss, subject_code = [], [], [], []
+    subject_codes = {subject: index for index, subject in enumerate(sorted(subjects))}
+    for subject in sorted(subjects):
+        subject_metadata = metadata.loc[metadata.subject.astype(str) == str(subject)]
+        for state, label in (("alert", 0), ("drowsy", 1)):
+            candidates = subject_metadata.loc[
+                subject_metadata.state.eq(state), "window_idx"
+            ].index.to_numpy()
+            if not len(candidates):
+                raise ValueError(f"Validation subject {subject} lacks {state} windows")
+            sampled = _sample(candidates, windows_per_subject, rng)
+            indices.extend(sampled.tolist())
+            binary.extend([label] * len(sampled))
+            kss.extend(metadata.loc[sampled, "kss"].to_numpy(float))
+            subject_code.extend([subject_codes[str(subject)]] * len(sampled))
+    return {
+        "indices": np.asarray(indices, dtype=np.int64),
+        "binary": np.asarray(binary, dtype=np.float32),
+        "kss": (np.asarray(kss, dtype=np.float32) - 1.0) / 8.0,
+        "subject_code": np.asarray(subject_code, dtype=np.int64),
+    }
+
+
 def _as_tensors(batch, windows, device):
     values = np.asarray(windows[batch["indices"]], dtype=np.float32)
     return {
@@ -384,7 +408,17 @@ def _write_report(run, result, folds, config):
 def train_fold(windows, metadata, fold_index, heldout_subject, config, root, device):
     history = []
     rng = np.random.default_rng(config["training"]["seed"] + fold_index)
-    splits = paired_loso_folds(metadata, heldout_subject, validation_offset=fold_index + 1)
+    validation_mode = config["training"].get("validation_mode", "rotating_subject")
+    if validation_mode == "rotating_subject":
+        splits = paired_loso_folds(metadata, heldout_subject, validation_offset=fold_index + 1)
+        validation_description = splits["validation"][0]
+    else:
+        train_subjects = [
+            subject for subject in paired_subjects(metadata)
+            if subject != str(heldout_subject)
+        ]
+        splits = {"train": train_subjects, "validation": train_subjects, "test": [str(heldout_subject)]}
+        validation_description = f"multi:{len(train_subjects)}"
     train_indices = split_indices(metadata, splits["train"])
     validation_indices = split_indices(metadata, splits["validation"])
     test_indices = split_indices(metadata, splits["test"])
@@ -425,8 +459,26 @@ def train_fold(windows, metadata, fold_index, heldout_subject, config, root, dev
         splits["train"],
         config["training"]["batch_subjects"],
         config["training"]["windows_per_state"],
-            config["training"]["windows_per_intermediate"],
+        config["training"]["windows_per_intermediate"],
     )
+    validation_rng = np.random.default_rng(
+        config["training"]["seed"] + 100000 + fold_index
+    )
+    if validation_mode == "rotating_subject":
+        validation_batch = balanced_subject_indices(
+            metadata,
+            splits["validation"][0],
+            config["training"]["validation_windows"],
+            validation_rng,
+        )
+    else:
+        validation_batch = multi_subject_validation_indices(
+            metadata,
+            splits["validation"],
+            config["training"]["validation_windows_per_subject"],
+            validation_rng,
+        )
+    validation_tensors = _as_tensors(validation_batch, windows, device)
     amp_enabled = bool(config["training"]["amp"] and device.type == "cuda")
     scaler = torch.amp.GradScaler(device="cuda", enabled=amp_enabled)
     best_loss, best_epoch, best_state, stale = float("inf"), 0, None, 0
@@ -459,19 +511,12 @@ def train_fold(windows, metadata, fold_index, heldout_subject, config, root, dev
         if not np.isfinite(train_losses).all():
             raise ValueError(f"Nonfinite training loss in fold {fold_index}")
         scheduler.step()
-        validation_batch = balanced_subject_indices(
-            metadata,
-            splits["validation"][0],
-            config["training"]["validation_windows"],
-            rng,
-        )
-        tensors = _as_tensors(validation_batch, windows, device)
         model.eval()
         with torch.no_grad(), torch.autocast(
             device_type=device.type, dtype=torch.float16, enabled=amp_enabled
         ):
-            outputs = model(tensors["values"], reversal_weight=0.0)
-            validation_losses = compute_loss(outputs, tensors, config, 0.0)
+            outputs = model(validation_tensors["values"], reversal_weight=0.0)
+            validation_losses = compute_loss(outputs, validation_tensors, config, 0.0)
         validation_loss = float(validation_losses["total"].detach().cpu())
         if not np.isfinite(validation_loss):
             raise ValueError(f"Nonfinite validation loss in fold {fold_index}")
@@ -524,6 +569,7 @@ def train_fold(windows, metadata, fold_index, heldout_subject, config, root, dev
         "predictions": predictions,
         "history": pd.DataFrame(history),
         "split": splits,
+        "validation_description": validation_description,
         "best_epoch": best_epoch,
         "best_validation_loss": best_loss,
     }
@@ -585,7 +631,7 @@ def run_training(config, root, variant=None):
             fold_rows.append({
                 "fold": fold_index,
                 "heldout_subject": heldout_subject,
-                "validation_subject": result["split"]["validation"][0],
+                "validation_subject": result["validation_description"],
                 "train_subjects": "|".join(result["split"]["train"]),
                 "best_epoch": result["best_epoch"],
                 "best_validation_loss": result["best_validation_loss"],

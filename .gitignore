@@ -34,3 +34,5 @@ results/**
 !results/**/*.txt
 !results/**/*.yaml
 !results/**/*.yml
+!results/**/*.png
+!results/**/*.pdf

@@ -1,0 +1,70 @@
+protocol: si-mset-v1.1
+data:
+  drozy_root: data_public/DROZY
+  cache_dir: results/eog_si_mset/cache_v1
+  subjects: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+  exclude_tests: [7-1]
+  kss_file: KSS.txt
+  channels: [EOG-H, EOG-V]
+  target_fs: 128
+  window_sec: 30.0
+  stride_sec: 10.0
+  primary_phase: 0
+  alert_max: 4
+  drowsy_min: 6
+  min_fixations: 5
+  min_saccades: 3
+  preprocess:
+    highpass: 0.5
+    lowpass: 30.0
+    filter_order: 4
+    hampel_window: 51
+    hampel_threshold: 3.0
+  event_detection:
+    velocity_threshold: auto
+    velocity_percentile: 70.0
+    min_fixation_ms: 100.0
+    min_saccade_ms: 20.0
+model:
+  variant: full
+  d_model: 128
+  transformer_layers: 5
+  attention_heads: 8
+  ffn_dim: 256
+  sequence_tokens: 128
+  dropout: 0.2
+training:
+  optimizer: adamw
+  learning_rate: 0.0003
+  weight_decay: 0.0002
+  epochs: 130
+  patience: 24
+  batches_per_epoch: 32
+  batch_subjects: 5
+  windows_per_state: 16
+  windows_per_intermediate: 6
+  validation_mode: training_subjects
+  validation_windows: 32
+  validation_windows_per_subject: 2
+  noise_std: 0.015
+  bce_weight: 1.0
+  ordinal_weight: 0.5
+  pair_weight: 0.25
+  pair_margin: 0.25
+  adversarial_weight: 0.10
+  adversarial_warmup_epochs: 8
+  device: auto
+  amp: true
+  seed: 2026112111
+evaluation:
+  bootstrap_iterations: 2000
+  seed: 2026112112
+  min_auc: 0.75
+  min_auc_lower: 0.50
+  min_delta_auc: 0.05
+  min_delta_lower: 0.0
+  baseline_run: results/dual_factor_predictive_v7/20261121T042129Z-70784213
+output:
+  root: results/eog_si_mset_v1_1
+  overwrite: false
+  save_checkpoints: true

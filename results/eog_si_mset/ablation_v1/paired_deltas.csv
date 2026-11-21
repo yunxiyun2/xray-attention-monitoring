@@ -1,0 +1,4 @@
+comparison,point_delta_auc,ci_low,ci_high,bootstrap_fraction_positive,bootstrap_fraction_zero,interpretation
+full_minus_single_scale,0.020000000000000018,-0.09000000000000008,0.20000000000000007,0.5845,0.0525,not_identified
+full_minus_no_adversarial,0.010000000000000009,-0.09999999999999998,0.10000000000000009,0.462,0.065,not_identified
+full_minus_binary_only,0.020000000000000018,-0.05999999999999994,0.10000000000000009,0.617,0.1055,not_identified

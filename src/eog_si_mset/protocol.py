@@ -1,6 +1,7 @@
 """Fixed constants for SI-MSET."""
 
 PROTOCOL = "si-mset-v1"
+SUPPORTED_PROTOCOLS = ("si-mset-v1", "si-mset-v1.1")
 VARIANTS = ("full", "single_scale", "no_adversarial", "binary_only")
 CHANNELS = ("eog_h", "eog_v", "velocity")
 LABEL_NAMES = ("alert", "drowsy")

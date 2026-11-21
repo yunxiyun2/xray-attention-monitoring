@@ -16,7 +16,21 @@ uv pip install --python .venv/bin/python -e '.[stats,raw,deep]'
 ```
 
 Set `data.drozy_root` in `configs/eog_si_mset_v1.yaml` before preparing the cache.
-The SI-MSET experiment has not yet been trained on DROZY.
+The first full LOSO run completed with subject-state AUC 0.750 but an
+inconclusive +0.080 delta over the v7 baseline. See the
+[SI-MSET execution log](docs/dual_factor/si_mset_v1_execution_log.md).
+The four-variant ablation is also summarized there; every component delta has a
+95% CI that crosses zero.
+
+The longer-budget v1.1 configuration keeps the same test folds and success
+thresholds while using a 0.79M-parameter model, 130 epochs, 32 batches per
+epoch and a fixed multi-subject validation set:
+
+```bash
+.venv/bin/python scripts/train_eog_transformer.py \
+  --config configs/eog_si_mset_v1_1.yaml \
+  --variant full
+```
 
 The v7 entry point remains for reproducing the incremental predictive-validity
 result. It uses the previously generated feature matrix and does not require raw EOG.

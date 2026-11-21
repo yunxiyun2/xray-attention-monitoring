@@ -122,6 +122,8 @@ def test_one_fold_end_to_end_smoke(tmp_path):
         "adversarial_warmup_epochs": 1,
         "amp": False,
         "seed": 1,
+        "validation_mode": "training_subjects",
+        "validation_windows_per_subject": 2,
     })
     config["output"] = {"save_checkpoints": False}
     result = train_fold(
