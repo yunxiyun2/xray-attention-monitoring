@@ -1,0 +1,21 @@
+{
+  "protocol": "si-mset-v1.1",
+  "cache_dir": "/bigdisk/dyx/xray-attention-monitoring/results/eog_si_mset/cache_v1",
+  "paired_subjects": [
+    "1",
+    "10",
+    "11",
+    "13",
+    "2",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
+  ],
+  "config_sha256": "7beba09c1a3cbe620845a7adbc3ad8a340693794a2d1d5ec70f2c58a78897c3c",
+  "code_sha256": "9be495e01819033e1bc89a516f3f1bc96491daed59cc4b6880b23d4e7d2a776a",
+  "device": "cuda",
+  "cuda_device": "NVIDIA GeForce RTX 3090",
+  "platform": "Linux-5.15.0-70-generic-x86_64-with-glibc2.31"
+}

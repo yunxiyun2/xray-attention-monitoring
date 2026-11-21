@@ -6,33 +6,33 @@
 
 **方法**：每名被试窗口级数据单独做 2 因子固定解 EFA（主轴因子法 + Promax 旋转）
 
-**被试总数**：14，成功：14，跳过/错误：0
+**被试总数**：14，成功：0，跳过/错误：14
 
 
 ## 汇总统计
 
 | 统计量 | 值 |
 |---|---|
-| 方向一致被试数 | 8/14 |
-| 交叉载荷中位数 | 0.246 |
-| 因子相关中位数 | -0.158 |
-| 累计方差解释率中位数 | 0.737 |
+| 方向一致被试数 | 0/0 |
+| 交叉载荷中位数 | nan |
+| 因子相关中位数 | nan |
+| 累计方差解释率中位数 | nan |
 
 ## 逐被试明细
 
 | 被试 | 窗口数 | 因子数 | 方向一致 | 交叉载荷最大值 | 因子相关 | 累计方差 | 状态 |
 |---|---|---|---|---|---|---|---|
-| 1 | 174 | 2 | ✅ | 0.330 | 0.369 | 0.676 | ok |
-| 2 | 174 | 2 | ❌ | 0.389 | 0.317 | 0.757 | ok |
-| 3 | 174 | 2 | ❌ | 0.343 | -0.133 | 0.557 | ok |
-| 4 | 172 | 2 | ✅ | 0.125 | -0.355 | 0.805 | ok |
-| 5 | 174 | 2 | ✅ | 0.215 | 0.178 | 0.729 | ok |
-| 6 | 174 | 2 | ✅ | 0.089 | 0.005 | 0.736 | ok |
-| 7 | 116 | 2 | ✅ | 0.241 | -0.185 | 0.632 | ok |
-| 8 | 174 | 2 | ❌ | 0.158 | -0.529 | 0.737 | ok |
-| 9 | 116 | 2 | ✅ | 0.289 | -0.391 | 0.755 | ok |
-| 10 | 116 | 2 | ❌ | 0.385 | -0.182 | 0.690 | ok |
-| 11 | 174 | 2 | ✅ | 0.250 | 0.053 | 0.824 | ok |
-| 12 | 58 | 2 | ❌ | 0.297 | 0.055 | 0.606 | ok |
-| 13 | 116 | 2 | ✅ | 0.122 | -0.196 | 0.749 | ok |
-| 14 | 132 | 2 | ❌ | 0.169 | -0.375 | 0.740 | ok |
+| 1 | 174 | — | — | — | — | — | error: PAF Heywood case: communalities outside [0, 1] |
+| 2 | 174 | — | — | — | — | — | error: PAF Heywood case: communalities outside [0, 1] |
+| 3 | 174 | — | — | — | — | — | error: PAF Heywood case: communalities outside [0, 1] |
+| 4 | 172 | — | — | — | — | — | error: PAF Heywood case: communalities outside [0, 1] |
+| 5 | 174 | — | — | — | — | — | error: PAF Heywood case: communalities outside [0, 1] |
+| 6 | 174 | — | — | — | — | — | error: PAF Heywood case: communalities outside [0, 1] |
+| 7 | 116 | — | — | — | — | — | error: PAF Heywood case: communalities outside [0, 1] |
+| 8 | 174 | — | — | — | — | — | error: PAF Heywood case: communalities outside [0, 1] |
+| 9 | 116 | — | — | — | — | — | error: PAF Heywood case: communalities outside [0, 1] |
+| 10 | 116 | — | — | — | — | — | error: PAF Heywood case: communalities outside [0, 1] |
+| 11 | 174 | — | — | — | — | — | error: PAF Heywood case: communalities outside [0, 1] |
+| 12 | 58 | — | — | — | — | — | error: PAF Heywood case: communalities outside [0, 1] |
+| 13 | 116 | — | — | — | — | — | error: PAF did not converge in 500 iterations |
+| 14 | 132 | — | — | — | — | — | error: PAF Heywood case: communalities outside [0, 1] |
