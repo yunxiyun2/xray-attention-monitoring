@@ -1,0 +1,38 @@
+{
+  "decision": "supported",
+  "protocol": "si-mset-v1.2",
+  "variant": "full",
+  "seeds": [
+    2026112121,
+    2026112122,
+    2026112123
+  ],
+  "n_subjects": 10,
+  "main_method": "three_seed_ensemble_rank",
+  "main_auc": 0.8799999999999999,
+  "main_ci": [
+    0.61,
+    1.0
+  ],
+  "raw_auc": 0.71,
+  "baseline_auc": 0.67,
+  "delta_calibration": 0.16999999999999993,
+  "delta_calibration_ci": [
+    0.030000000000000027,
+    0.30000000000000004
+  ],
+  "delta_baseline": 0.20999999999999985,
+  "delta_baseline_ci": [
+    0.030000000000000027,
+    0.42
+  ],
+  "seed_aucs": [
+    0.77,
+    0.69,
+    0.65
+  ],
+  "brier": 0.2401508480244628,
+  "log_loss": 0.709562806692835,
+  "bootstrap_iterations": 2000,
+  "baseline_available": true
+}
