@@ -101,6 +101,14 @@ def validate_config(raw):
     if validation_mode == "training_subjects":
         if not isinstance(training.get("validation_windows_per_subject"), int) or training["validation_windows_per_subject"] < 1:
             raise ValueError("validation_windows_per_subject must be a positive integer")
+    replicate_seeds = training.get("replicate_seeds")
+    if replicate_seeds is not None:
+        if not isinstance(replicate_seeds, list) or not replicate_seeds:
+            raise ValueError("replicate_seeds must be a nonempty list")
+        if any(not isinstance(seed, int) or seed < 0 for seed in replicate_seeds):
+            raise ValueError("replicate_seeds must contain nonnegative integers")
+        if len(set(replicate_seeds)) != len(replicate_seeds):
+            raise ValueError("replicate_seeds must be unique")
 
     evaluation = config["evaluation"]
     for key in ("bootstrap_iterations", "seed"):
@@ -109,6 +117,18 @@ def validate_config(raw):
     for key in ("min_auc", "min_auc_lower", "min_delta_auc", "min_delta_lower"):
         if not isinstance(evaluation.get(key), (int, float)):
             raise ValueError(f"Invalid evaluation threshold: {key}")
+    if config["protocol"] == "si-mset-v1.2":
+        if evaluation.get("calibration_method") not in ("raw", "center", "zscore", "rank"):
+            raise ValueError("Invalid calibration_method")
+        if evaluation["calibration_method"] != "rank":
+            raise ValueError("v1.2 pre-registers rank as the primary calibration")
+        if not isinstance(evaluation.get("min_windows_per_subject"), int) or evaluation["min_windows_per_subject"] < 2:
+            raise ValueError("min_windows_per_subject must be at least two")
+        for key in ("min_delta_calibration", "min_delta_calibration_lower"):
+            if not isinstance(evaluation.get(key), (int, float)):
+                raise ValueError(f"Missing v1.2 evaluation threshold: {key}")
+        if replicate_seeds is None or len(replicate_seeds) < 2:
+            raise ValueError("v1.2 requires multiple replicate_seeds")
     baseline = evaluation.get("baseline_run")
     if baseline is not None and not isinstance(baseline, str):
         raise ValueError("baseline_run must be a path string or null")

@@ -534,7 +534,7 @@ def format_final_decision(
                      "如无实质意义则转单维模型，如实报告假设被推翻。")
 
     lines.append(f"**判定依据**：{ladder['stop_reason']}。预注册修剪规则与判据见 "
-                 f"docs/superpowers/specs/2026-10-25-dual-factor-efa-v3.md §1。\n")
+                 "历史 v3 预注册裁剪规则 §1。\n")
     lines.append(f"**下一步**：{next_step}\n")
     lines.append(f"**最终判定**：{verdict_label}\n")
     return "\n".join(lines)

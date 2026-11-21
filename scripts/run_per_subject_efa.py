@@ -2,7 +2,7 @@
 """逐被试 EFA 分析：对每名被试的窗口单独做 2 因子固定解 EFA。
 
 用法（从项目根目录运行）：
-    conda run -n Anomaly python scripts/run_per_subject_efa.py
+    .venv/bin/python scripts/run_per_subject_efa.py
 """
 from __future__ import annotations
 

@@ -142,8 +142,8 @@ SV 在 F2 上预期为**负载荷**（与 SE/GTE 负相关）。C2 判据检查�
 
 ### 4.3 规范文档
 
-- **SPEC v6**：`docs/superpowers/specs/2026-11-15-dual-factor-efa-v6.md`——完整定义 4/3 结构修正方案、模拟验证要求、新增 AC17/AC18 验收标准。
-- **Plan v6**：`docs/superpowers/plans/2026-11-15-dual-factor-efa-v6-plan.md`——V6-T01 到 V6-T08 实施任务。
+- **SPEC v6**：历史规范已移除；本次运行配置和产物保留在本目录。
+- **Plan v6**：历史计划已移除；本次运行记录保留在配套执行报告中。
 
 ---
 
@@ -363,8 +363,8 @@ v6 产出 Decision B，修正建议已用尽。
 
 | 文件 | 说明 |
 |------|------|
-| `docs/superpowers/specs/2026-11-15-dual-factor-efa-v6.md` | v6 SPEC（4/3 结构修正方案） |
-| `docs/superpowers/plans/2026-11-15-dual-factor-efa-v6-plan.md` | v6 Plan（实施计划） |
+| 历史 v6 SPEC | 已移除，不作为当前研究入口 |
+| 历史 v6 Plan | 已移除，不作为当前执行入口 |
 
 ### 11.2 代码模块
 

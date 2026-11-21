@@ -120,6 +120,14 @@ def test_long_run_config_is_valid():
     assert config["model"]["transformer_layers"] == 5
 
 
+def test_v12_config_is_valid():
+    project_root = Path(__file__).resolve().parents[2]
+    config = load_config(project_root / "configs/eog_si_mset_v1_2.yaml")
+    assert config["protocol"] == "si-mset-v1.2"
+    assert len(config["training"]["replicate_seeds"]) == 3
+    assert config["evaluation"]["calibration_method"] == "rank"
+
+
 def test_paired_subjects_and_loso_are_disjoint():
     metadata = _metadata()
     assert paired_subjects(metadata) == [str(i) for i in range(1, 11)]

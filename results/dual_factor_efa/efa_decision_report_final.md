@@ -404,7 +404,7 @@
 | 窗口化 | 30s 窗口，10s 步长（66.7% 重叠） |
 | 标准化 | 被试内 z-score |
 | 缺失率 | 2.11%（< 10% 合格线） |
-| 复现命令 | `conda run -n Anomaly python -m dual_factor.pipeline --config configs/dual_factor_efa.yaml` |
+| 复现命令 | `.venv/bin/python -m dual_factor.pipeline --config configs/dual_factor_efa.yaml` |
 
 ## 附录 B：数据来源文件
 

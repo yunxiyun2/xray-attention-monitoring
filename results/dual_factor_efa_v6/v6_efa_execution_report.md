@@ -2,8 +2,7 @@
 
 > 日期：2026-11-15
 > 运行目录：`results/dual_factor_efa_v6/20261115T142308Z-fd3e4386/`
-> 配套规范：[SPEC v6](docs/superpowers/specs/2026-11-15-dual-factor-efa-v6.md)
-> 配套计划：[Plan v6](docs/superpowers/plans/2026-11-15-dual-factor-efa-v6-plan.md)
+> 历史 v6 规范与计划已移除；本报告保留原始运行结论。
 > 前序结果：v5 Decision B（运行目录 `20261109T154643Z-aaffec43`）
 
 ## 1. 工作目标

@@ -78,7 +78,7 @@ DROZY 是一个公开嗜睡数据库，用于检测嗜睡/疲劳的算法评估�
 从项目根目录执行：
 
 ```bash
-conda run -n Anomaly python -m dual_factor.pipeline --config configs/dual_factor_efa.yaml
+.venv/bin/python -m dual_factor.pipeline --config configs/dual_factor_efa.yaml
 ```
 
 配置文件为唯一参数源：`configs/dual_factor_efa.yaml`

@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "xray-attention"
+name = "eog-fatigue-monitoring"
 version = "0.1.0"
-description = "Attention-state analysis for X-ray security inspection"
+description = "EOG-based fatigue-state monitoring research"
 requires-python = ">=3.11"
 
 [project.optional-dependencies]

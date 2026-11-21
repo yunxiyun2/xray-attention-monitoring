@@ -243,8 +243,8 @@ reason: PAF Heywood case: communalities outside [0, 1]
 | `docs/dual_factor/v5_validation_final.json` | 模拟验证证书（有效） |
 | `docs/dual_factor/v5_validation_results.md` | 模拟验证结果汇总 |
 | `docs/dual_factor/v5_execution_log.md` | 实施记录（已更新） |
-| `docs/superpowers/specs/2026-11-08-dual-factor-efa-v5.md` | SPEC v5.0 |
-| `docs/superpowers/plans/2026-11-08-dual-factor-efa-v5-plan.md` | Plan v5.0 |
+| 历史 v5.0 SPEC | 已移除 |
+| 历史 v5.0 Plan | 已移除 |
 
 ---
 

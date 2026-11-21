@@ -1,12 +1,21 @@
 import numpy as np
 import pandas as pd
 import pytest
+from pathlib import Path
 
 torch = pytest.importorskip("torch")
 
 from eog_si_mset.config import load_config
 from eog_si_mset.model import GradientReversal, SIMSET
-from eog_si_mset.train import PairBatchGenerator, compute_loss, train_fold
+import eog_si_mset.train as train_module
+from eog_si_mset.train import (
+    PairBatchGenerator,
+    calibrate_subject_scores,
+    compute_loss,
+    ensemble_seed_predictions,
+    state_scores,
+    train_fold,
+)
 
 
 def _model_config():
@@ -138,3 +147,90 @@ def test_one_fold_end_to_end_smoke(tmp_path):
     assert len(result["predictions"]) == 6
     assert result["predictions"].probability.between(0, 1).all()
     assert result["predictions"].subject.eq("1").all()
+
+
+def test_calibration_uses_only_unlabelled_subject_scores():
+    rows = []
+    for subject in ("1", "2"):
+        for index in range(8):
+            rows.append({
+                "subject": subject,
+                "test": "1",
+                "kss": 3 if index < 4 else 7,
+                "label": 0 if index < 4 else 1,
+                "state": "alert" if index < 4 else "drowsy",
+                "window_idx": index,
+                "probability": .1 + .1 * index,
+                "kss_prediction": .2 + .05 * index,
+            })
+    frame = pd.DataFrame(rows)
+    calibrated = calibrate_subject_scores(frame, "rank", min_windows=8)
+    relabelled = frame.copy()
+    relabelled["label"] = 1 - relabelled["label"]
+    relabelled["state"] = relabelled.state.map({"alert": "drowsy", "drowsy": "alert"})
+    recalibrated = calibrate_subject_scores(relabelled, "rank", min_windows=8)
+    assert np.allclose(calibrated.score, recalibrated.score)
+    assert set(state_scores(calibrated).state) == {"alert", "drowsy"}
+
+
+def test_seed_ensemble_averages_logits():
+    base = pd.DataFrame({
+        "subject": ["1", "1"], "test": ["1", "1"], "kss": [3, 7],
+        "label": [0, 1], "state": ["alert", "drowsy"], "window_idx": [0, 3],
+        "kss_prediction": [.2, .8],
+    })
+    first = base.assign(probability=[.2, .8])
+    second = base.assign(probability=[.8, .2])
+    _, ensemble = ensemble_seed_predictions([(1, first), (2, second)])
+    assert np.allclose(ensemble.probability, .5)
+    assert ensemble.n_seeds.eq(2).all()
+
+
+def test_v12_pipeline_with_stubbed_fold_training(tmp_path, monkeypatch):
+    rows = []
+    for subject in range(1, 11):
+        for state, label, kss in (("alert", 0, 3), ("drowsy", 1, 7)):
+            for window_idx in range(20):
+                rows.append({
+                    "subject": str(subject),
+                    "test": 1,
+                    "kss": kss,
+                    "label": label,
+                    "state": state,
+                    "window_idx": window_idx * 3,
+                })
+    metadata = pd.DataFrame(rows)
+
+    def fake_train_fold(windows, metadata, fold_index, heldout_subject, config, root,
+                        device, training_seed=None):
+        test = metadata.loc[metadata.subject.eq(str(heldout_subject))].copy()
+        offset = int(heldout_subject) / 100
+        test["probability"] = np.clip(
+            .08 + .75 * test.label + offset + (training_seed % 7) / 1000, .001, .999
+        )
+        test["kss_prediction"] = test.probability
+        history = pd.DataFrame([{
+            "epoch": 1, "train_loss": 1., "validation_loss": .1, "learning_rate": 1e-3,
+        }])
+        return {
+            "predictions": test,
+            "history": history,
+            "split": {"train": [str(i) for i in range(1, 11) if str(i) != str(heldout_subject)]},
+            "validation_description": "stub",
+            "best_epoch": 1,
+            "best_validation_loss": .1,
+        }
+
+    monkeypatch.setattr(train_module, "load_cache", lambda path: (None, metadata))
+    monkeypatch.setattr(train_module, "train_fold", fake_train_fold)
+    project_root = Path(__file__).resolve().parents[2]
+    config = load_config(project_root / "configs/eog_si_mset_v1_2.yaml")
+    config["evaluation"]["bootstrap_iterations"] = 20
+    config["evaluation"]["baseline_run"] = None
+    config["output"]["root"] = str(tmp_path / "v12")
+    result = train_module.run_training_v12(config, tmp_path)
+    run_dir = Path(result["run_dir"])
+    assert result["decision"]["decision"] == "not_evaluable"
+    assert (run_dir / "calibration_summary.csv").exists()
+    assert (run_dir / "bootstrap_samples.csv").exists()
+    assert (run_dir / "figures/v12_performance.png").exists()

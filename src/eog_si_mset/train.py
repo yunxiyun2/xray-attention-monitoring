@@ -239,6 +239,112 @@ def _state_predictions(predictions):
     return table
 
 
+def calibrate_subject_scores(predictions, method, min_windows):
+    required = {"subject", "state", "label", "probability"}
+    missing = required.difference(predictions.columns)
+    if missing:
+        raise ValueError(f"Missing prediction columns: {sorted(missing)}")
+    if method not in ("raw", "center", "zscore", "rank"):
+        raise ValueError(f"Unknown calibration method: {method}")
+    frame = predictions.copy()
+    probability = np.clip(frame["probability"].to_numpy(float), 1e-8, 1 - 1e-8)
+    frame["logit"] = np.log(probability / (1 - probability))
+    counts = frame.groupby("subject").size()
+    if counts.lt(min_windows).any():
+        failing = counts[counts.lt(min_windows)].to_dict()
+        raise ValueError(f"Too few windows for subject calibration: {failing}")
+    grouped = frame.groupby("subject", sort=False)["logit"]
+    if method == "raw":
+        frame["score"] = frame["logit"]
+    elif method == "center":
+        frame["score"] = frame["logit"] - grouped.transform("median")
+    elif method == "zscore":
+        mean = grouped.transform("mean")
+        scale = grouped.transform("std").replace(0, np.nan)
+        if not np.isfinite(scale).all():
+            raise ValueError("Degenerate subject score scale")
+        frame["score"] = (frame["logit"] - mean) / scale
+    else:
+        frame["score"] = grouped.rank(pct=True, method="average")
+    frame["calibration"] = method
+    return frame
+
+
+def state_scores(calibrated):
+    table = (
+        calibrated.groupby(["subject", "state", "label"], as_index=False)
+        .agg(score=("score", "mean"), probability=("probability", "mean"),
+             n_windows=("score", "size"))
+    )
+    counts = table.groupby("subject").size()
+    if not counts.eq(2).all():
+        raise ValueError("Calibrated state aggregation did not produce two rows per subject")
+    return table
+
+
+def _correct_subject_ordering(states):
+    pivot = states.pivot(index="subject", columns="state", values="score")
+    return int((pivot["drowsy"] > pivot["alert"]).sum())
+
+
+def ensemble_seed_predictions(prediction_frames):
+    if not prediction_frames:
+        raise ValueError("No seed predictions to ensemble")
+    keys = ["subject", "test", "kss", "label", "state", "window_idx"]
+    frames = []
+    for seed, predictions in prediction_frames:
+        frame = predictions.copy()
+        probability = np.clip(frame["probability"].to_numpy(float), 1e-8, 1 - 1e-8)
+        frame["seed"] = seed
+        frame["logit"] = np.log(probability / (1 - probability))
+        frames.append(frame)
+    combined = pd.concat(frames, ignore_index=True)
+    if combined.groupby(keys).size().nunique() != 1:
+        raise ValueError("Seed predictions do not contain matching rows")
+    ensemble = (
+        combined.groupby(keys, as_index=False)
+        .agg(logit=("logit", "mean"), probability=("probability", "mean"),
+             kss_prediction=("kss_prediction", "mean"), n_seeds=("seed", "size"))
+    )
+    ensemble["logit"] = ensemble["logit"].astype(float)
+    ensemble["probability"] = 1 / (1 + np.exp(-ensemble["logit"]))
+    return combined, ensemble
+
+
+def _bootstrap_v12(states_by_method, baseline_states, iterations, seed):
+    subjects = sorted(states_by_method["raw"].subject.unique())
+    maps = {
+        method: {subject: frame for subject, frame in frame.groupby("subject")}
+        for method, frame in states_by_method.items()
+    }
+    baseline_map = (
+        {subject: frame for subject, frame in baseline_states.groupby("subject")}
+        if baseline_states is not None else {}
+    )
+    rng = np.random.default_rng(seed)
+    rows = []
+    for iteration in range(iterations):
+        sampled = rng.choice(subjects, len(subjects), replace=True)
+        aucs = {}
+        for method, mapping in maps.items():
+            sample = pd.concat([mapping[subject] for subject in sampled], ignore_index=True)
+            aucs[method] = roc_auc_score(sample.label, sample.score)
+        row = {"iteration": iteration, **{f"{method}_auc": value for method, value in aucs.items()}}
+        if baseline_states is not None:
+            baseline_sample = pd.concat(
+                [baseline_map[subject] for subject in sampled], ignore_index=True
+            )
+            row["baseline_auc"] = roc_auc_score(
+                baseline_sample.label, baseline_sample.probability
+            )
+        if "raw" in aucs and "rank" in aucs:
+            row["rank_minus_raw"] = aucs["rank"] - aucs["raw"]
+        if baseline_states is not None:
+            row["rank_minus_baseline"] = aucs["rank"] - row["baseline_auc"]
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
 def _bootstrap(subject_states, baseline_states, iterations, seed):
     subjects = sorted(subject_states.subject.unique())
     rng = np.random.default_rng(seed)
@@ -405,9 +511,357 @@ def _write_report(run, result, folds, config):
     Path(run / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def train_fold(windows, metadata, fold_index, heldout_subject, config, root, device):
+def _write_v12_figures(run, states_by_method, seed_metrics, baseline_states, bootstrap):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from sklearn.metrics import roc_curve
+
+    directory = run / "figures"
+    directory.mkdir()
+    colors = {"raw": "#4c6575", "center": "#8c5f38", "zscore": "#497d70",
+              "rank": "#246591", "baseline": "#8f4b6b"}
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+    for method in ("raw", "rank"):
+        frame = states_by_method[method]
+        fpr, tpr, _ = roc_curve(frame.label, frame.score)
+        axes[0].plot(
+            fpr, tpr, color=colors[method],
+            label=f"{method} ({roc_auc_score(frame.label, frame.score):.3f})",
+        )
+    if baseline_states is not None:
+        fpr, tpr, _ = roc_curve(baseline_states.label, baseline_states.probability)
+        axes[0].plot(
+            fpr, tpr, color=colors["baseline"],
+            label=f"v7 global ({roc_auc_score(baseline_states.label, baseline_states.probability):.3f})",
+        )
+    axes[0].plot([0, 1], [0, 1], "--", color="#9aa5ad")
+    axes[0].set(xlabel="False positive rate", ylabel="True positive rate",
+                title="Three-seed ensemble, subject-state ROC")
+    axes[0].legend(frameon=False)
+
+    labels = [f"seed {row.seed}" for row in seed_metrics.itertuples()]
+    values = seed_metrics.auc.tolist()
+    for method in ("raw", "rank"):
+        labels.append(f"{method} ensemble")
+        values.append(roc_auc_score(states_by_method[method].label, states_by_method[method].score))
+    positions = np.arange(len(labels))
+    axes[1].barh(positions, values, color=["#9aa5ad"] * len(seed_metrics) + [colors["raw"], colors["rank"]])
+    for position, value in zip(positions, values):
+        axes[1].text(value + .01, position, f"{value:.3f}", va="center", fontsize=8)
+    axes[1].set(yticks=positions, yticklabels=labels, xlim=(0, 1.05),
+                xlabel="Subject-state AUC")
+    axes[1].invert_yaxis()
+    axes[1].axvline(.5, linestyle="--", color="#ba5545")
+    axes[1].set_title("Seed stability and calibration")
+    for axis in axes:
+        axis.spines[["top", "right"]].set_visible(False)
+        axis.grid(alpha=.15)
+    fig.tight_layout()
+    fig.savefig(directory / "v12_performance.png", dpi=220)
+    fig.savefig(directory / "v12_performance.pdf")
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    methods = ["raw", "center", "zscore", "rank"]
+    estimates = [roc_auc_score(states_by_method[m].label, states_by_method[m].score) for m in methods]
+    intervals = [_interval(bootstrap[f"{method}_auc"]) for method in methods]
+    positions = np.arange(len(methods))
+    for position, (low, high), estimate in zip(positions, intervals, estimates):
+        ax.plot([low, high], [position, position], color="#52768e", linewidth=3)
+        ax.scatter([estimate], [position], color="#246591", zorder=3)
+    ax.set(yticks=positions, yticklabels=methods, xlim=(0, 1),
+           xlabel="Subject-state AUC with cluster bootstrap 95% CI")
+    ax.axvline(.5, linestyle="--", color="#ba5545")
+    ax.set_title("Calibration sensitivity")
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.grid(axis="x", alpha=.15)
+    fig.tight_layout()
+    fig.savefig(directory / "calibration_intervals.png", dpi=220)
+    fig.savefig(directory / "calibration_intervals.pdf")
+    plt.close(fig)
+
+
+def _write_v12_report(run, result, folds, config, calibration_summary, seed_metrics):
+    lines = [
+        "# SI-MSET v1.2 训练报告",
+        "",
+        f"- 主方法：three-seed ensemble + subject `{config['evaluation']['calibration_method']}` calibration",
+        f"- 判定：**{result['decision']}**",
+        f"- 主 AUC：{result['main_auc']:.3f} "
+        f"（95% CI {result['main_ci'][0]:.3f}–{result['main_ci'][1]:.3f}）",
+        f"- raw ensemble AUC：{result['raw_auc']:.3f}",
+    ]
+    if result.get("baseline_auc") is not None:
+        lines.extend([
+            f"- v7 global AUC：{result['baseline_auc']:.3f}",
+            f"- 主方法 − raw：{result['delta_calibration']:.3f} "
+            f"（95% CI {result['delta_calibration_ci'][0]:.3f}–{result['delta_calibration_ci'][1]:.3f}）",
+            f"- 主方法 − v7：{result['delta_baseline']:.3f} "
+            f"（95% CI {result['delta_baseline_ci'][0]:.3f}–{result['delta_baseline_ci'][1]:.3f}）",
+        ])
+    lines.extend([
+        "",
+        "## 单 seed 稳定性",
+        "",
+        "| Seed | AUC |",
+        "|---:|---:|",
+        *[f"| {row.seed} | {row.auc:.3f} |" for row in seed_metrics.itertuples()],
+        "",
+        "## 校准敏感性",
+        "",
+        "| 方法 | AUC | 正确排序被试 |",
+        "|---|---:|---:|",
+        *[
+            f"| {row.method} | {row.auc:.3f} | {row.correct_subjects}/10 |"
+            for row in calibration_summary.itertuples()
+        ],
+        "",
+        "## 分折状态",
+        "",
+        "| Held-out subject | Best epochs | Seeds | Status |",
+        "|---|---|---|---|",
+    ])
+    for row in folds.itertuples():
+        lines.append(
+            f"| {row.heldout_subject} | {row.best_epochs} | {row.seeds} | {row.status} |"
+        )
+    lines.extend([
+        "",
+        "## 解释边界",
+        "",
+        "- 三种受试者内校准都只使用未标注测试窗口分布，不读取测试标签。",
+        "- 这是离线批评价设计，不能直接用于单窗口实时预测。",
+        "- 主判定同时要求超过 v7 和超过 raw ensemble；未通过时保留真实负结果。",
+        "- 三个 seed 必须同时完成，未挑选表现最好的 seed。",
+    ])
+    Path(run / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def run_training_v12(config, root):
+    root = Path(root)
+    device = resolve_device(config["training"]["device"])
+    cache_dir = (
+        Path(config["data"]["cache_dir"])
+        if Path(config["data"]["cache_dir"]).is_absolute()
+        else root / config["data"]["cache_dir"]
+    )
+    windows, metadata = load_cache(cache_dir)
+    paired = paired_subjects(metadata)
+    output_root = Path(config["output"]["root"])
+    if not output_root.is_absolute():
+        output_root = root / output_root
+    output_root.mkdir(parents=True, exist_ok=True)
+    run = output_root / (
+        datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:8]
+    )
+    run.mkdir()
+    (run / "config_used.yaml").write_text(
+        yaml.safe_dump(config, sort_keys=False, allow_unicode=True), encoding="utf-8"
+    )
+    seeds = config["training"]["replicate_seeds"]
+    save_json(run / "manifest.json", {
+        "protocol": config["protocol"],
+        "cache_dir": str(cache_dir),
+        "paired_subjects": paired,
+        "replicate_seeds": seeds,
+        "config_sha256": config_hash(config),
+        "code_sha256": package_code_hash(root),
+        "device": str(device),
+        "cuda_device": torch.cuda.get_device_name(0) if device.type == "cuda" else None,
+        "platform": platform.platform(),
+    })
+
+    fold_rows, fold_predictions, histories = [], [], []
+    for fold_index, heldout_subject in enumerate(paired):
+        print(
+            f"[v1.2 fold {fold_index + 1}/{len(paired)}] held-out subject {heldout_subject}",
+            flush=True,
+        )
+        seed_results = []
+        try:
+            for seed in seeds:
+                seed_everything(seed + fold_index)
+                result = train_fold(
+                    windows, metadata, fold_index, heldout_subject, config, run, device,
+                    training_seed=seed,
+                )
+                result["history"].to_csv(
+                    run / f"fold_{fold_index:02d}_seed_{seed}_history.csv",
+                    index=False,
+                )
+                histories.append(result["history"].assign(
+                    heldout_subject=heldout_subject, seed=seed
+                ))
+                seed_results.append(result)
+            fold_predictions.extend(
+                (seed, result["predictions"]) for seed, result in zip(seeds, seed_results)
+            )
+            first = seed_results[0]
+            fold_rows.append({
+                "fold": fold_index,
+                "heldout_subject": heldout_subject,
+                "validation_subject": first["validation_description"],
+                "train_subjects": "|".join(first["split"]["train"]),
+                "seeds": "|".join(str(seed) for seed in seeds),
+                "best_epochs": "|".join(str(result["best_epoch"]) for result in seed_results),
+                "best_validation_losses": "|".join(
+                    f"{result['best_validation_loss']:.8f}" for result in seed_results
+                ),
+                "status": "ok",
+                "reason": "",
+            })
+        except Exception as error:
+            fold_rows.append({
+                "fold": fold_index,
+                "heldout_subject": heldout_subject,
+                "validation_subject": "",
+                "train_subjects": "",
+                "seeds": "|".join(str(seed) for seed in seeds),
+                "best_epochs": "",
+                "best_validation_losses": "",
+                "status": "failed",
+                "reason": f"{type(error).__name__}: {error}",
+            })
+    folds = pd.DataFrame(fold_rows)
+    folds.to_csv(run / "folds.csv", index=False)
+    if folds.status.ne("ok").any() or len(fold_predictions) != len(paired) * len(seeds):
+        save_json(run / "result.json", {
+            "decision": "not_evaluable",
+            "reason": "At least one fold or seed failed",
+        })
+        return {"run_dir": str(run), "decision": "not_evaluable"}
+
+    seed_predictions, ensemble = ensemble_seed_predictions(fold_predictions)
+    seed_predictions.to_csv(run / "seed_predictions.csv", index=False)
+    ensemble.to_csv(run / "window_predictions.csv", index=False)
+
+    seed_rows = []
+    for seed in seeds:
+        predictions = seed_predictions.loc[seed_predictions.seed == seed]
+        calibrated = calibrate_subject_scores(
+            predictions, "raw", config["evaluation"]["min_windows_per_subject"]
+        )
+        states = state_scores(calibrated)
+        seed_rows.append({
+            "seed": seed,
+            "auc": roc_auc_score(states.label, states.score),
+            "average_precision": average_precision_score(states.label, states.score),
+        })
+    seed_metrics = pd.DataFrame(seed_rows)
+    seed_metrics.to_csv(run / "seed_metrics.csv", index=False)
+
+    states_by_method = {}
+    calibration_rows = []
+    for method in ("raw", "center", "zscore", "rank"):
+        calibrated = calibrate_subject_scores(
+            ensemble, method, config["evaluation"]["min_windows_per_subject"]
+        )
+        states = state_scores(calibrated)
+        states["calibration"] = method
+        states_by_method[method] = states
+        calibration_rows.append({
+            "method": method,
+            "auc": roc_auc_score(states.label, states.score),
+            "average_precision": average_precision_score(states.label, states.score),
+            "correct_subjects": _correct_subject_ordering(states),
+        })
+    calibration_summary = pd.DataFrame(calibration_rows)
+    calibration_summary.to_csv(run / "calibration_summary.csv", index=False)
+    pd.concat(states_by_method.values(), ignore_index=True).to_csv(
+        run / "calibration_state_predictions.csv", index=False
+    )
+
+    baseline_path = config["evaluation"]["baseline_run"]
+    if baseline_path and not Path(baseline_path).is_absolute():
+        baseline_path = str(root / baseline_path)
+    baseline_states = load_baseline_states(baseline_path)
+    if baseline_states is not None:
+        if set(states_by_method["raw"].subject) != set(baseline_states.subject):
+            raise ValueError("SI-MSET and baseline subject sets differ")
+        baseline_states = baseline_states.set_index(["subject", "state", "label"]).loc[
+            states_by_method["raw"].set_index(["subject", "state", "label"]).index
+        ].reset_index()
+    bootstrap = _bootstrap_v12(
+        states_by_method,
+        baseline_states,
+        config["evaluation"]["bootstrap_iterations"],
+        config["evaluation"]["seed"],
+    )
+    bootstrap.to_csv(run / "bootstrap_samples.csv", index=False)
+
+    main_method = config["evaluation"]["calibration_method"]
+    main_states = states_by_method[main_method]
+    main_auc = float(roc_auc_score(main_states.label, main_states.score))
+    main_ci = _interval(bootstrap[f"{main_method}_auc"])
+    raw_auc = float(roc_auc_score(states_by_method["raw"].label, states_by_method["raw"].score))
+    baseline_auc = (
+        float(roc_auc_score(baseline_states.label, baseline_states.probability))
+        if baseline_states is not None else None
+    )
+    delta_calibration = main_auc - raw_auc
+    delta_calibration_ci = _interval(bootstrap[f"{main_method}_minus_raw"])
+    delta_baseline = main_auc - baseline_auc if baseline_auc is not None else None
+    delta_baseline_ci = (
+        _interval(bootstrap[f"{main_method}_minus_baseline"])
+        if baseline_states is not None else None
+    )
+    if baseline_states is None:
+        decision = "not_evaluable"
+    elif (
+        main_auc >= config["evaluation"]["min_auc"]
+        and main_ci[0] > config["evaluation"]["min_auc_lower"]
+        and delta_calibration >= config["evaluation"]["min_delta_calibration"]
+        and delta_calibration_ci[0] > config["evaluation"]["min_delta_calibration_lower"]
+        and delta_baseline >= config["evaluation"]["min_delta_auc"]
+        and delta_baseline_ci[0] > config["evaluation"]["min_delta_lower"]
+    ):
+        decision = "supported"
+    elif main_ci[1] < .5:
+        decision = "below_chance"
+    else:
+        decision = "inconclusive"
+    result = {
+        "decision": decision,
+        "protocol": config["protocol"],
+        "variant": config["model"]["variant"],
+        "seeds": seeds,
+        "n_subjects": int(main_states.subject.nunique()),
+        "main_method": f"three_seed_ensemble_{main_method}",
+        "main_auc": main_auc,
+        "main_ci": main_ci,
+        "raw_auc": raw_auc,
+        "baseline_auc": baseline_auc,
+        "delta_calibration": delta_calibration,
+        "delta_calibration_ci": delta_calibration_ci,
+        "delta_baseline": delta_baseline,
+        "delta_baseline_ci": delta_baseline_ci,
+        "seed_aucs": seed_metrics.auc.tolist(),
+        "brier": float(brier_score_loss(
+            states_by_method["raw"].label,
+            np.clip(states_by_method["raw"].probability, 1e-12, 1 - 1e-12),
+        )),
+        "log_loss": float(log_loss(
+            states_by_method["raw"].label,
+            np.clip(states_by_method["raw"].probability, 1e-12, 1 - 1e-12),
+        )),
+        "bootstrap_iterations": int(config["evaluation"]["bootstrap_iterations"]),
+        "baseline_available": baseline_states is not None,
+    }
+    save_json(run / "result.json", result)
+    main_states.to_csv(run / "state_predictions.csv", index=False)
+    history = pd.concat(histories, ignore_index=True)
+    history.to_csv(run / "training_history.csv", index=False)
+    _write_v12_figures(run, states_by_method, seed_metrics, baseline_states, bootstrap)
+    _write_v12_report(run, result, folds, config, calibration_summary, seed_metrics)
+    return {"run_dir": str(run), "decision": result}
+
+
+def train_fold(windows, metadata, fold_index, heldout_subject, config, root, device,
+               training_seed=None):
     history = []
-    rng = np.random.default_rng(config["training"]["seed"] + fold_index)
+    training_seed = config["training"]["seed"] if training_seed is None else training_seed
+    rng = np.random.default_rng(training_seed + fold_index)
     validation_mode = config["training"].get("validation_mode", "rotating_subject")
     if validation_mode == "rotating_subject":
         splits = paired_loso_folds(metadata, heldout_subject, validation_offset=fold_index + 1)
@@ -462,7 +916,7 @@ def train_fold(windows, metadata, fold_index, heldout_subject, config, root, dev
         config["training"]["windows_per_intermediate"],
     )
     validation_rng = np.random.default_rng(
-        config["training"]["seed"] + 100000 + fold_index
+        training_seed + 100000 + fold_index
     )
     if validation_mode == "rotating_subject":
         validation_batch = balanced_subject_indices(
@@ -553,7 +1007,10 @@ def train_fold(windows, metadata, fold_index, heldout_subject, config, root, dev
         raise ValueError(f"No finite validation checkpoint for fold {fold_index}")
     model.load_state_dict(best_state)
     if config["output"]["save_checkpoints"]:
-        torch.save(best_state, root / f"fold_{fold_index:02d}_subject_{heldout_subject}.pt")
+        torch.save(
+            best_state,
+            root / f"fold_{fold_index:02d}_seed_{training_seed}_subject_{heldout_subject}.pt",
+        )
     probabilities, kss_prediction = predict_indices(
         model,
         windows,
@@ -565,24 +1022,26 @@ def train_fold(windows, metadata, fold_index, heldout_subject, config, root, dev
     predictions["probability"] = probabilities
     predictions["kss_prediction"] = kss_prediction
     return {
-        "model": model,
         "predictions": predictions,
         "history": pd.DataFrame(history),
         "split": splits,
         "validation_description": validation_description,
         "best_epoch": best_epoch,
         "best_validation_loss": best_loss,
+        "training_seed": training_seed,
     }
 
 
 def run_training(config, root, variant=None):
-    torch.manual_seed(config["training"]["seed"])
-    device = resolve_device(config["training"]["device"])
     if variant is not None:
         if variant not in ("full", "single_scale", "no_adversarial", "binary_only"):
             raise ValueError(f"Unknown variant: {variant}")
         config = deepcopy(config)
         config["model"]["variant"] = variant
+    if config["protocol"] == "si-mset-v1.2":
+        return run_training_v12(config, root)
+    torch.manual_seed(config["training"]["seed"])
+    device = resolve_device(config["training"]["device"])
     root = Path(root)
     cache_dir = (
         Path(config["data"]["cache_dir"])

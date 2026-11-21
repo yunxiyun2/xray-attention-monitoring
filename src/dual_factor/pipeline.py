@@ -15,7 +15,7 @@
   - Step 11：对 EFA 保留的六指标两因子结构做 CFA，检验拟合优度
 
 用法（从项目根目录）：
-    conda run -n Anomaly python -m dual_factor.pipeline --config configs/dual_factor_efa.yaml
+    .venv/bin/python -m dual_factor.pipeline --config configs/dual_factor_efa.yaml
 """
 from __future__ import annotations
 

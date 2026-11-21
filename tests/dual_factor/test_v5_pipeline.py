@@ -59,8 +59,10 @@ def test_matrix_pipeline_dry_run_and_nonpromotable_diagnostics(tmp_path):
     spec.loader.exec_module(module)
     document = module.build_document(output)
     text = "\n".join(p.text for p in document.paragraphs)
-    assert "诊断运行" in text
+    assert facts["run_id"] in text
+    assert "二、本期主要工作" in text
     assert "每因子三项" not in text
+    assert "双因子可分离性已成立" not in text
 
 
 def test_changed_matrix_extraction_parameters_are_rejected(tmp_path):

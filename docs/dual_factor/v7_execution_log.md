@@ -1,7 +1,6 @@
 # v7 执行结果与解读（2026-11-21）
 
 > 运行目录：`results/dual_factor_predictive_v7/20261121T042129Z-70784213`  
-> 规范：[SPEC v7](../superpowers/specs/2026-11-21-dual-factor-v7-predictive-validity.md)  
 > 判定：**inconclusive，不支持“双分数优于单一总分”的增量主张**
 
 ## 1. 执行事实
