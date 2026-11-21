@@ -10,8 +10,8 @@
 
 **Architecture:**
 
-- `src/dual_factor/data/`：DROZY 数据读取（EDF/KSS/PVT）与 EOG 信号预处理
-- `src/dual_factor/features/`：I-VT 事件检测、8 指标计算、窗口化与标准化
+- 
+-  `src/dual_factor/features/`：I-VT 事件检测、8 指标计算、窗口化与标准化
 - `src/dual_factor/analysis/`：EFA（KMO/Bartlett/PAF/Promax/平行分析）、描述性统计、方向性检验、可视化
 - `src/dual_factor/pipeline.py`：一键运行入口
 - `configs/dual_factor_efa.yaml`：唯一参数源
