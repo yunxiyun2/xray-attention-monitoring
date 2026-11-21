@@ -1,0 +1,38 @@
+{
+  "status": "ok",
+  "n_subjects": 10,
+  "n_subject_state_rows": 20,
+  "excluded_subjects": [
+    {
+      "subject": "12",
+      "reason": "missing_alert_or_drowsy_after_window_gate",
+      "alert_windows": 20,
+      "drowsy_windows": 0
+    },
+    {
+      "subject": "14",
+      "reason": "missing_alert_or_drowsy_after_window_gate",
+      "alert_windows": 0,
+      "drowsy_windows": 40
+    },
+    {
+      "subject": "3",
+      "reason": "missing_alert_or_drowsy_after_window_gate",
+      "alert_windows": 60,
+      "drowsy_windows": 0
+    },
+    {
+      "subject": "9",
+      "reason": "missing_alert_or_drowsy_after_window_gate",
+      "alert_windows": 0,
+      "drowsy_windows": 40
+    }
+  ],
+  "minimum_windows_per_record": 10,
+  "primary_phase": 0,
+  "window_sec": 30.0,
+  "stride_sec": 10.0,
+  "input_path": "results/dual_factor_efa/indicator_matrix.csv",
+  "input_sha256": "e20c60040c6ceb7dfa72b8a1567c430cbaedb0d01adac15fa1ee8a27390d4138",
+  "min_pairs": 8
+}

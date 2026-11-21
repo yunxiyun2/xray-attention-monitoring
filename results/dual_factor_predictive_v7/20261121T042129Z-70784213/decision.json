@@ -1,0 +1,13 @@
+{
+  "decision": "inconclusive",
+  "n_pairs": 10,
+  "primary_metric": "two_factor_minus_global_auc",
+  "delta_auc": -0.15000000000000002,
+  "ci_low": -0.47,
+  "ci_high": 0.14,
+  "delta_auc_min": 0.05,
+  "efa_v6_decision": "B",
+  "latent_structure_claim": "not established",
+  "bootstrap": "subject-cluster, paired states retained",
+  "bootstrap_iterations": 2000
+}

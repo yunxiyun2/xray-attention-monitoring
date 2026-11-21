@@ -1,0 +1,8 @@
+{
+  "protocol": "v7.0",
+  "run": "20261121T042129Z-70784213",
+  "input_sha256": "e20c60040c6ceb7dfa72b8a1567c430cbaedb0d01adac15fa1ee8a27390d4138",
+  "config_sha256": "b3ee298a1b951d4fc219851e47449d151264afb2db01b31b017a9bfb29246252",
+  "code_sha256": "1682e41800798db41e27cb574dd2fece6cc60bfbbd9c99ac2c7facf6c9f3dad1",
+  "platform": "Linux-5.15.0-70-generic-x86_64-with-glibc2.31"
+}
