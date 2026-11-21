@@ -3,6 +3,10 @@
 > 日期：2026-11-21。  
 > 对应规范：[SPEC v7](../specs/2026-11-21-dual-factor-v7-predictive-validity.md)。  
 > 目标：在实验机上用现有特征矩阵得到可审计的 AUC 三条件对照。
+>
+> 执行状态：V7-T01—T06 已完成；正式运行目录
+> `results/dual_factor_predictive_v7/20261121T042129Z-70784213`，主判定
+> `inconclusive`。
 
 ## V7-T01：固定协议与配置
 

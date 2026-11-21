@@ -1,11 +1,25 @@
 # X-ray Attention Monitoring
 
-## Current research: v7 incremental predictive validity
+## New research route: SI-MSET
 
-The newest entry point is `scripts/run_predictive_v7.py`. After the v6 EFA
-returned Decision B, this experiment tests whether the predefined driver-decay
-and distribution-transition scores add predictive value relative to a single
-fatigue score. It does not reopen the latent-factor decision.
+The active deep-learning route is **Subject-Invariant Multi-Scale EOG
+Transformer (SI-MSET)**. It learns directly from raw EOG-H/EOG-V, combines
+fast/medium/slow temporal scales, removes subject identity with an adversarial
+head, and adds a subject-internal alert/drowsy ranking loss. The design and
+execution plan are in [SPEC](docs/superpowers/specs/2026-11-21-subject-invariant-mset-v1.md)
+and [Plan](docs/superpowers/plans/2026-11-21-subject-invariant-mset-v1-plan.md).
+
+```bash
+uv pip install --python .venv/bin/python -e '.[stats,raw,deep]'
+.venv/bin/python scripts/prepare_eog_tensor.py --config configs/eog_si_mset_v1.yaml
+.venv/bin/python scripts/train_eog_transformer.py --config configs/eog_si_mset_v1.yaml --variant full
+```
+
+Set `data.drozy_root` in `configs/eog_si_mset_v1.yaml` before preparing the cache.
+The SI-MSET experiment has not yet been trained on DROZY.
+
+The v7 entry point remains for reproducing the incremental predictive-validity
+result. It uses the previously generated feature matrix and does not require raw EOG.
 
 ```bash
 .venv/bin/python scripts/run_predictive_v7.py --dry-run
@@ -16,6 +30,11 @@ The v5 fatigue gaze-factor protocol remains the historical EFA entry point. The 
 candidate indicators form a 4/2 grouping: FD/PSV/SA/FN and SE/GTE. The second component
 is limited to distribution/transition covariation, not complete direction randomness.
 The X-ray classification experiments below are archived research history.
+
+The 2026-11-21 v7 run returned `inconclusive`: two-factor score minus global score
+AUC = -0.150, subject-cluster bootstrap 95% CI = [-0.470, 0.140]. See
+[v7 execution log](docs/dual_factor/v7_execution_log.md) and the
+[complete research task and conclusion](docs/project_report/研究任务与结论.md).
 
 CPU setup (no GPU or deep-learning dependencies required):
 
