@@ -1,0 +1,7 @@
+metric,estimate,ci_low,ci_high
+deep_auc,0.73,0.52,0.9299999999999999
+window_auc,0.6480042613636363,,
+average_precision,0.6600641025641025,,
+brier,0.23589819793220607,,
+log_loss,0.8960312105241555,,
+delta_auc_vs_v7_global,0.05999999999999994,-0.25,0.38

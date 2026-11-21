@@ -1,0 +1,22 @@
+{
+  "decision": "inconclusive",
+  "variant": "single_scale",
+  "n_subjects": 10,
+  "deep_auc": 0.73,
+  "deep_ci": [
+    0.51,
+    0.91
+  ],
+  "baseline_auc": 0.67,
+  "delta_auc": 0.05999999999999994,
+  "delta_ci": [
+    -0.28,
+    0.37
+  ],
+  "window_auc": 0.653203125,
+  "average_precision": 0.7139421689421689,
+  "brier": 0.2199423700067305,
+  "log_loss": 0.6555556924794443,
+  "bootstrap_iterations": 2000,
+  "baseline_available": true
+}
