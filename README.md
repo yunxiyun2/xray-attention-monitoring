@@ -58,6 +58,7 @@ DROZY 目录。已有 `results/eog_si_mset/cache_v1/` 时不需要重新生成�
 |---|---|---:|---:|---|
 | v1 | 单 seed，96 维，3 层 | 0.750 | +0.080 | inconclusive |
 | v1.1 | 单 seed，128 维，5 层，130 epoch | 0.720 | +0.050 | inconclusive |
+| v1.2 | 三种子融合 + 被试内秩校准 | **0.880** | **+0.210** | **supported** |
 | 消融 | v1 的 `single_scale` | 0.730 | +0.060 | inconclusive |
 | 消融 | v1 的 `no_adversarial` | 0.740 | +0.070 | inconclusive |
 | 消融 | v1 的 `binary_only` | 0.730 | +0.060 | inconclusive |
@@ -66,6 +67,7 @@ DROZY 目录。已有 `results/eog_si_mset/cache_v1/` 时不需要重新生成�
 
 - [v1 执行与消融](docs/dual_factor/si_mset_v1_execution_log.md)
 - [v1.1 执行记录](docs/dual_factor/si_mset_v1_1_execution_log.md)
+- [v1.2 执行记录](docs/dual_factor/si_mset_v1_2_execution_log.md)
 - [v1 消融报告](results/eog_si_mset/ablation_v1/report.md)
 - [完整研究任务与结论](docs/project_report/研究任务与结论.md)
 
