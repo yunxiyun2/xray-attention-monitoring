@@ -82,8 +82,8 @@ def validate_config(raw):
         raise ValueError("Only AdamW is supported")
     if training.get("learning_rate", 0) <= 0 or training.get("weight_decay", -1) < 0:
         raise ValueError("Invalid optimizer hyperparameters")
-    if training.get("device") not in ("auto", "cpu", "cuda"):
-        raise ValueError("device must be auto, cpu or cuda")
+    if training.get("device") not in ("auto", "cpu", "cuda", "mps"):
+        raise ValueError("device must be auto, cpu, cuda or mps")
     for key in ("bce_weight", "ordinal_weight", "pair_weight", "adversarial_weight"):
         if training.get(key, -1) < 0:
             raise ValueError(f"Invalid loss weight: {key}")

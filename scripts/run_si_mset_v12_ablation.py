@@ -2,6 +2,7 @@
 import argparse
 from copy import deepcopy
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -96,16 +97,48 @@ def _validate_reference_config(config, run):
         raise ValueError("The v1.2 ablation requires rank as the primary calibration")
 
 
-def _validate_runtime(config, reference):
+def _validate_runtime(config, reference, allow_device_mismatch=False):
     device = resolve_device(config["training"]["device"])
     device_name = torch.cuda.get_device_name(0) if device.type == "cuda" else None
     expected = reference["manifest"]
     if str(device) != expected.get("device") or device_name != expected.get("cuda_device"):
-        raise RuntimeError(
-            "The current execution device does not match the full-model reference "
+        message = (
+            "The full reference and ablation runs use different devices "
             f"(current={device}/{device_name}, reference={expected.get('device')}/"
-            f"{expected.get('cuda_device')}). Run the ablations on the reference device."
+            f"{expected.get('cuda_device')})."
         )
+        if not allow_device_mismatch:
+            raise RuntimeError(message + " Pass --allow-cross-device-reference to proceed.")
+        print(f"WARNING: {message} The report will record this difference.", flush=True)
+
+
+def _cache_fingerprint(config):
+    cache_dir = Path(config["data"]["cache_dir"])
+    if not cache_dir.is_absolute():
+        cache_dir = ROOT / cache_dir
+    windows_path = cache_dir / "windows.npy"
+    metadata_path = cache_dir / "metadata.csv"
+    manifest_path = cache_dir / "manifest.json"
+    for path in (windows_path, metadata_path, manifest_path):
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"Local training cache is incomplete: missing {path}. "
+                "Copy the SI-MSET cache from the training server before running."
+            )
+    cache_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    digest = hashlib.sha256()
+    with windows_path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    windows_sha256 = digest.hexdigest()
+    if cache_manifest.get("windows_sha256") != windows_sha256:
+        raise ValueError("windows.npy SHA-256 does not match the local cache manifest")
+    return {
+        "cache_dir": str(cache_dir.resolve()),
+        "windows_sha256": windows_sha256,
+        "metadata_sha256": cache_manifest.get("metadata_sha256"),
+        "paired_subjects": cache_manifest.get("paired_subjects"),
+    }
 
 
 def _validate_runs(runs):
